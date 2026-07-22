@@ -525,23 +525,26 @@
     <div id="emergencyContent"></div>
   </section>
   </div><!-- /view-emergency -->
+
+  <!-- Footer lives INSIDE <main> so it's part of the scroll flow: on the desktop app-shell (where
+       main scrolls internally and is height-locked) a body-level footer sat in an unreachable
+       below-the-fold sliver. `main > footer { margin-top:auto }` pins it to the bottom. -->
+  <footer>
+    <p>My Japan Trip · last updated <span id="footGen"></span></p>
+    <div class="backup">
+      <button type="button" id="backupExport" class="backup-btn" title="Download all your events, places, checklist and notes as a file">⬇ Back up my data</button>
+      <button type="button" id="backupImport" class="backup-btn" title="Restore from a backup file (replaces data on this device)">⬆ Restore</button>
+      <button type="button" id="printBtn" class="backup-btn" title="Print or save a one-page PDF summary of your trip status">🖨 Print Summary</button>
+      <button type="button" id="syncShare" class="backup-btn" title="Sync your trip across devices and share it with a link">☁ Sync &amp; share</button>
+      <input type="file" id="backupFile" accept="application/json,.json" hidden>
+      <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
+    </div>
+    <p class="disclaimer">Everything you edit is saved only in this browser — back it up before clearing data or switching phones. Entry rules, transport, ticketing, Disney and booking systems all change — verify against official sources before relying on anything here. Confidence flags and “verify closer” notes mark what to re-check. The passphrase is convenience only, not real security.</p>
+  </footer>
 </main>
 
 <!-- Printable one-page summary — hidden on screen; the @media print rule reveals it. -->
 <div id="printView" hidden></div>
-
-<footer>
-  <p>My Japan Trip · last updated <span id="footGen"></span></p>
-  <div class="backup">
-    <button type="button" id="backupExport" class="backup-btn" title="Download all your events, places, checklist and notes as a file">⬇ Back up my data</button>
-    <button type="button" id="backupImport" class="backup-btn" title="Restore from a backup file (replaces data on this device)">⬆ Restore</button>
-    <button type="button" id="printBtn" class="backup-btn" title="Print or save a one-page PDF summary of your trip status">🖨 Print Summary</button>
-    <button type="button" id="syncShare" class="backup-btn" title="Sync your trip across devices and share it with a link">☁ Sync &amp; share</button>
-    <input type="file" id="backupFile" accept="application/json,.json" hidden>
-    <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
-  </div>
-  <p class="disclaimer">Everything you edit is saved only in this browser — back it up before clearing data or switching phones. Entry rules, transport, ticketing, Disney and booking systems all change — verify against official sources before relying on anything here. Confidence flags and “verify closer” notes mark what to re-check. The passphrase is convenience only, not real security.</p>
-</footer>
 
 <!-- first-paint route selector: mark the hash's view active before the deferred module boots,
      so a refresh lands on the right page (no dashboard flash). Classic, not inline (CSP). -->

@@ -3577,7 +3577,9 @@ ruby > rt {
    fixes the mini-month starting 54px below the grid (its old 3.2rem offset was tuned for
    page-level scrolling). Mobile keeps normal page scroll. */
 @media (min-width: 821px){
-  main{ height: calc(100dvh - var(--header-h) - var(--nav-h)); overflow-y: auto; overscroll-behavior: contain; }
+  main{ height: calc(100dvh - var(--header-h) - var(--nav-h)); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
+  main > footer{ margin-top: auto; }   /* pin the (now in-flow) footer to the bottom of the internal scroll */
+  body[data-route="calendar"] main > footer{ display: none; }   /* keep the calendar's one-viewport fit; the footer is reachable from every other route */
   .domain-nav{ top: 0; }
   .check-progress{ top: 0; }
   .cal-mininav{ top: 0; }
