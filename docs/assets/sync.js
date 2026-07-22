@@ -17,7 +17,7 @@ import { openDialog, confirmModal } from './lib/modal.js';
 // Optional hardcoded default. Normally you paste the Worker URL into the in-app Sync panel instead
 // (stored device-local). Must be an https://*.workers.dev origin (allowed by the page CSP). Empty
 // here + none saved = the whole feature is off.
-const STORE_URL_DEFAULT = '';
+const STORE_URL_DEFAULT = 'https://japan-trip-sync.winnllam.workers.dev';
 
 const PREFIX = 'jwh-';
 const K_URL = 'jwh-sync-url';       // device-local Worker URL (excluded from the synced payload)
