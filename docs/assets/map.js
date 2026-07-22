@@ -321,11 +321,16 @@ function initMap() {
   const home = loadPlaces().find(p => p.home && typeof p.lat === 'number' && typeof p.lng === 'number');
   map = L.map(el, { scrollWheelZoom: false, touchZoom: true, zoomSnap: 0 })
     .setView(home ? [home.lat, home.lng] : [35.69, 139.73], home ? 14 : 12);
-  // Flighty-style dark basemap — CARTO dark_matter (free, no key; retina @2x via {r}+detectRetina)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  // Basemap follows the app theme — CARTO light_all / dark_all (free, no key; retina @2x via {r}+detectRetina)
+  const basemapUrl = (t) => `https://{s}.basemaps.cartocdn.com/${t === 'light' ? 'light_all' : 'dark_all'}/{z}/{x}/{y}{r}.png`;
+  const curTheme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+  const tiles = L.tileLayer(basemapUrl(curTheme()), {
     maxZoom: 20, subdomains: 'abcd', detectRetina: true,
     attribution: '© OpenStreetMap contributors © CARTO',
   }).addTo(map);
+  // the theme toggle flips <html data-theme> without firing an event, so watch it and swap tiles live
+  new MutationObserver(() => tiles.setUrl(basemapUrl(curTheme())))
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   // trackpad / laptop 2-finger pinch arrives as ctrl+wheel → zoom around the cursor; a plain wheel
   // (no ctrl) is left alone so the page still scrolls past the map.
   el.addEventListener('wheel', (e) => {
