@@ -14,6 +14,7 @@ import { mountEventSearch } from './eventsearch.js';
 import { mountExpWeek } from './expweek.js';
 import { mountLang } from './lang.js';
 import { mountBackup } from './backup.js';
+import { mountSync } from './sync.js';
 import { initRouter } from './router.js';
 import { registerLazyRoute } from './lazyroutes.js';
 import { mountGestures } from './gestures.js';
@@ -89,6 +90,7 @@ function boot() {
       safe(() => mountExpWeek());          // "This week" band on #/explore (display-only)
       safe(() => mountLang());             // EN/日本語 chrome toggle + hover-dictionary
       safe(() => mountBackup());           // export/import all device-local trip data
+      safe(() => mountSync());             // ☁ optional cloud sync + share link (off unless a store URL is set)
       // Local usage counters (aggregates only, never leaves this device — see ⚙ Guide → "Your usage").
       // Registered BEFORE initRouter so the boot route counts as the first visit.
       safe(() => {

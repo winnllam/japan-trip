@@ -10,7 +10,7 @@
      + p2pquake (JMA quake feed) + Google APIs (calendar sync) + localhost AnkiConnect;
      img also allows event-art hosts (#136): lh3.googleusercontent.com, cdn.leekduck.com, pokemoncenter-online.com. -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com https://lh3.googleusercontent.com https://cdn.leekduck.com https://www.pokemoncenter-online.com; connect-src 'self' https://nominatim.openstreetmap.org https://jotoba.de https://api.mymemory.translated.net https://api.open-meteo.com https://open.er-api.com https://api.p2pquake.net https://en.wikipedia.org http://127.0.0.1:8765 https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com https://lh3.googleusercontent.com https://cdn.leekduck.com https://www.pokemoncenter-online.com; connect-src 'self' https://nominatim.openstreetmap.org https://jotoba.de https://api.mymemory.translated.net https://api.open-meteo.com https://open.er-api.com https://api.p2pquake.net https://en.wikipedia.org http://127.0.0.1:8765 https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.workers.dev; frame-src https://accounts.google.com; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
 <title>My Japan Trip — Autumn 2026</title>
 <meta name="description" content="A personal, password-gated trip dashboard for a Tokyo tourist trip (Oct–Nov 2026) — editable calendar, booking deadlines, day plans, maps, seasons, food and Disney.">
 <meta name="theme-color" content="#bc002d" media="(prefers-color-scheme: light)">
@@ -536,6 +536,7 @@
     <button type="button" id="backupExport" class="backup-btn" title="Download all your events, places, checklist and notes as a file">⬇ Back up my data</button>
     <button type="button" id="backupImport" class="backup-btn" title="Restore from a backup file (replaces data on this device)">⬆ Restore</button>
     <button type="button" id="printBtn" class="backup-btn" title="Print or save a one-page PDF summary of your trip status">🖨 Print Summary</button>
+    <button type="button" id="syncShare" class="backup-btn" title="Sync your trip across devices and share it with a link">☁ Sync &amp; share</button>
     <input type="file" id="backupFile" accept="application/json,.json" hidden>
     <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
   </div>

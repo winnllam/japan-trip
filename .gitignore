@@ -6,3 +6,7 @@ node_modules/
 
 # Playwright MCP test artifacts
 .playwright-mcp/
+
+# Wrangler (Cloudflare) local state/cache — contains account identifiers, never commit
+.wrangler/
+sync/.wrangler/

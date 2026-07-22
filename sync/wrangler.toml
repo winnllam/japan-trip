@@ -1,0 +1,10 @@
+name = "japan-trip-sync"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# KV namespace for the trip documents. Create it once with:
+#   wrangler kv namespace create TRIPS
+# then paste the printed id below (replace REPLACE_WITH_YOUR_KV_ID).
+[[kv_namespaces]]
+binding = "TRIPS"
+id = "5d6d48ae52414ff6ab5eef40b58198b6"
