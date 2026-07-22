@@ -33,21 +33,15 @@
   if (routeNav) {
     var hidden = (function () {
       try { var v = JSON.parse(localStorage.getItem('jwh-navhidden-v1') || 'null'); if (v && v.length !== undefined) return v; } catch (e) { /* ignore */ }
-      var shownArr = ['phrases'];
+      var shownArr = [];
       try { var s = JSON.parse(localStorage.getItem('jwh-navshow-v1') || 'null'); if (s && s.length !== undefined) shownArr = s; } catch (e) { /* ignore */ }
-      var opt = ['phrases', 'survival', 'grammar', 'study', 'packing', 'deadlines'], out = [];
+      var opt = ['packing', 'deadlines'], out = [];
       for (var i = 0; i < opt.length; i++) if (shownArr.indexOf(opt[i]) < 0) out.push(opt[i]);
-      return out.concat(['emergency', 'map', 'explore', 'rooms', 'people']);
+      return out;   // tourist revamp: show map/explore/emergency by default; rooms/people routes removed. KEEP IN SYNC with guide.js NAV_HIDDEN_DEFAULT.
     })();
     for (var k = 0; k < hidden.length; k++) {
       var a = routeNav.querySelector('a[data-route="' + hidden[k] + '"]');
       if (a && a.parentNode) a.parentNode.removeChild(a);
-    }
-    if (hidden.indexOf('phrases') < 0 && !routeNav.querySelector('a[data-route="phrases"]')) {
-      var pa = document.createElement('a');
-      pa.href = '#/phrases'; pa.setAttribute('data-route', 'phrases'); pa.setAttribute('data-i18n', 'nav.phrases'); pa.textContent = 'Phrases';
-      var dash = routeNav.querySelector('a[data-route="dashboard"]');
-      if (dash) routeNav.insertBefore(pa, dash.nextSibling); else routeNav.appendChild(pa);
     }
   }
   // Match router.js parseRoute exactly (it does NOT strip a query): only an exact `#/<route>`

@@ -1,5 +1,5 @@
 'use strict';
-// One-way push of app events → a dedicated "Japan WHV" Google calendar. GIS token model (no secret).
+// One-way push of app events → a dedicated "Japan Trip" Google calendar. GIS token model (no secret).
 // The owner pastes their public OAuth Client ID below; until then the control shows "needs setup".
 import { get, set, KEYS } from './lib/store.js';
 import { eventToGcal, getMapped, setMapped, forgetCalendar } from './lib/gcal.js';
@@ -122,8 +122,8 @@ async function ensureCalendar() {
     }
   }
 
-  // Create a new "Japan WHV" calendar.
-  const cal = await _api('POST', '/calendars', { summary: 'Japan WHV' });
+  // Create a new "Japan Trip" calendar.
+  const cal = await _api('POST', '/calendars', { summary: 'Japan Trip' });
   map = { ...map, calendarId: cal.id };
   saveMap(map);
   return cal.id;
@@ -133,7 +133,7 @@ async function ensureCalendar() {
 
 /**
  * connect()
- * Shows consent modal → loads GIS → requests token → ensures the "Japan WHV" calendar exists.
+ * Shows consent modal → loads GIS → requests token → ensures the "Japan Trip" calendar exists.
  */
 export async function connect() {
   if (!CLIENT_ID) {
@@ -142,7 +142,7 @@ export async function connect() {
   }
 
   const consented = await confirmModal(
-    'This will connect to Google Calendar and create a dedicated "Japan WHV" calendar to push your events into. Your token is kept in memory only and is never saved to disk.',
+    'This will connect to Google Calendar and create a dedicated "Japan Trip" calendar to push your events into. Your token is kept in memory only and is never saved to disk.',
     { ok: 'Connect', cancel: 'Cancel' },
   );
   if (!consented) return false;
@@ -180,7 +180,7 @@ export async function connect() {
 
 /**
  * syncNow(getEvents)
- * Pushes all app events into the "Japan WHV" calendar.
+ * Pushes all app events into the "Japan Trip" calendar.
  * INSERT new, PATCH existing, DELETE locally-removed. Writes the map after each success.
  * Recovery: 401/403 → re-auth + resume; 404 calendar → recreate + re-insert.
  */

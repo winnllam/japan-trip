@@ -3,7 +3,6 @@
 
 import { mountGate } from './gate.js';
 import { renderContent } from './content.js';
-import { mountPhraseDay } from './phraseday.js';
 import { mountCalendar, allEvents } from './calendar.js';
 import { mountGoogleSync } from './google-sync.js';
 import { mountTracker } from './tracker.js';
@@ -56,12 +55,10 @@ function boot() {
       // Each mount is isolated: one feature throwing must NOT blank the whole app — the router
       // still starts and every other page keeps working. Failures log to the console.
       const safe = (fn) => { try { fn(); } catch (err) { console.error('[boot]', err); } };
-      safe(seedOnce);                      // one-time: tick already-done items + drop a home base (before any mount reads them)
-      safe(seedNearby);                    // one-time: drop the near-base neighborhood pins (+ the festival venue)
-      safe(fixHousingSeed);                // one-time: un-tick the wrongly-seeded long-term share-house items
-      safe(seedDayPlanJul4);               // one-time: ready-made Plan-a-Day for the World DJ Festival (Jul 4)
-      safe(seedTripPlans);                 // one-time: bake the full Jul 13–26 itinerary into Plan a Day
-      safe(seedTripTodos);                 // one-time: drop live trip action-items into the checklist "My tasks"
+      safe(seedOnce);                      // one-time: drop a central Tokyo home-base pin (before any mount reads it)
+      // (Removed for the tourist revamp: the WHV/July seeders — near-base NE-Tokyo pins,
+      //  share-house checklist fixups, the Jul 4 festival day-plan, the Jul 13–26 itinerary,
+      //  and the WHV trip todos. Their defs remain below but are no longer invoked.)
       safe(() => mountCalendar(data, today));
       safe(() => mountGoogleSync(() => allEvents()));
       safe(() => mountTracker(data));
@@ -72,50 +69,11 @@ function boot() {
       // so they stay accurate without the pages mounted.
       safe(() => registerLazyRoute(['budget'],  () => import('./budget.js').then(m => m.mountBudget(data))));
       safe(() => registerLazyRoute(['packing'], () => import('./packing.js').then(m => m.mountPacking(data))));
-      safe(() => mountPhraseDay(data));    // "phrase of the day" dashboard widget (deterministic by date) — stays eager
-      // EF1: the 12 phrases-page modules (~76KB) lazy-load on first #/phrases entry —
-      // they were parse+mount cost on EVERY boot for the least-visited route.
-      let phrasesLoaded = false;
-      const loadPhrases = () => {
-        if (phrasesLoaded) return;
-        phrasesLoaded = true;
-        const view = document.getElementById('view-phrases');
-        view?.setAttribute('aria-busy', 'true');   // dims + disables the static toolbar until the mounts land (see CSS)
-        import('./phrasesboot.js').then(m => { m.mountPhrasesBundle(data); view?.removeAttribute('aria-busy'); })
-          .catch(err => { phrasesLoaded = false; view?.removeAttribute('aria-busy'); console.error('[boot] phrases bundle', err); });
-      };
-      document.addEventListener('jwh:route', (e) => { if (e.detail?.route === 'phrases' || e.detail?.route === 'survival') loadPhrases(); });
-      if (/^#\/?(phrases|survival)$/.test(location.hash)) loadPhrases();   // direct load / reload on either page (exact match)
-      // JLPT grammar reference (#/grammar) rides the same lazy pattern — module + its
-      // per-level data fetch load on first entry (specs/plans/2026-07-10-jlpt-grammar.md P1)
-      let grammarLoaded = false;
-      const loadGrammar = () => {
-        if (grammarLoaded) return;
-        grammarLoaded = true;
-        const view = document.getElementById('view-grammar');
-        view?.setAttribute('aria-busy', 'true');
-        import('./grammar.js').then(m => { m.mountGrammar(); view?.removeAttribute('aria-busy'); })
-          .catch(err => { grammarLoaded = false; view?.removeAttribute('aria-busy'); console.error('[boot] grammar', err); });
-      };
-      document.addEventListener('jwh:route', (e) => { if (e.detail?.route === 'grammar') loadGrammar(); });
-      if (/^#\/?grammar$/.test(location.hash)) loadGrammar();
-      // Grammar Gym (#/study) — the SRS session runner rides the same lazy pattern; the module +
-      // its per-level data fetch load on first entry (specs/plans/2026-07-17-grammar-mastery-program.md R2)
-      let studyLoaded = false;
-      const loadStudy = () => {
-        if (studyLoaded) return;
-        studyLoaded = true;
-        const view = document.getElementById('view-study');
-        view?.setAttribute('aria-busy', 'true');
-        import('./study.js').then(m => { m.mountStudy(); view?.removeAttribute('aria-busy'); })
-          .catch(err => { studyLoaded = false; view?.removeAttribute('aria-busy'); console.error('[boot] study', err); });
-      };
-      document.addEventListener('jwh:route', (e) => { if (e.detail?.route === 'study') loadStudy(); });
-      if (/^#\/?study$/.test(location.hash)) loadStudy();
+      // (Removed in the tourist revamp: Phrases / Survival Japanese, the JLPT Grammar reference
+      //  (#/grammar) and The Grammar Almanac trainer (#/study), plus the phrase-of-the-day widget.
+      //  Their modules — phraseday.js, phrasesboot.js, grammar.js, study*.js — stay on disk, unused.)
       // EF5: route-only pages lazy-load on first entry (~76KB off the boot path). people feeds the
       // calendar "縁 met here" jump (jwh:people-open) which awaits ensureRoute('people') in calendar.js.
-      safe(() => registerLazyRoute(['people'], () => import('./people.js').then(m => m.mountPeople(data))));
-      safe(() => registerLazyRoute(['rooms'],  () => import('./rooms.js').then(m => m.mountRooms(data))));
       safe(() => registerLazyRoute(['eats'],   () => import('./eats.js').then(m => m.mountEats())));
       // EF6: map + plan share ONE lazy bundle. plan.js imports placesModel/drawRoute/clearRoute from
       // map.js, and placesModel() reads map's module-level DATA set ONLY by mountMap — so the bundle
@@ -181,16 +139,13 @@ function bootError(msg) {
 // router won't re-render it later) and the map/dashboard read the seeded place.
 function seedOnce() {
   if (get(KEYS.seed, false)) return;
-  // NOTE: the two LONG-TERM share-house items are NOT seeded — the owner booked only the temporary
-  // Makoto Guesthouse; finding the long-term share house is still a live to-do (chk-lock-long-term-housing).
-  const SEED_DONE = ['chk-confirm-whv-eligibility-age-1', 'chk-gather-visa-documents-passpor', 'chk-show-proof-of-funds-in-your-ac', 'chk-book-consulate-appointment-and', 'chk-check-passport-validity-blan', 'chk-lock-the-proof-of-funds-figure-2', 'chk-book-first-week-accommodation-2', 'chk-adhd-ncd-permit'];
-  const checks = get(KEYS.checklist, {}) || {};
-  SEED_DONE.forEach(id => { checks[id] = true; });   // additive — only sets true, never un-checks
-  set(KEYS.checklist, checks);
+  // Tourist revamp: no WHV checklist to pre-tick. Just drop ONE central Tokyo home-base pin so the
+  // Map + Day-planner have an anchor to measure travel from. Placeholder at Shinjuku Station — the
+  // owner swaps in their real hotel/area on the Map. Respects the single-home invariant; idempotent.
   const places = get(KEYS.places, []) || [];
-  if (!places.some(p => p.id === 'p-sakura-house-makoto')) {
-    const hasHome = places.some(p => p.home);        // respect the single-home invariant
-    places.push({ id: 'p-sakura-house-makoto', name: 'Makoto Guesthouse', address: '2-3-9 Towa, Adachi-ku, Tokyo (Booking.com)', area: 'Ayase', lat: 35.7684, lng: 139.8264, category: 'personal', source: 'seed', coordKind: 'approx', fav: false, locked: false, visited: false, emoji: '', home: !hasHome });
+  if (!places.some(p => p.id === 'p-home-base')) {
+    const hasHome = places.some(p => p.home);
+    places.push({ id: 'p-home-base', name: 'My Tokyo base (change to your hotel)', address: '', area: 'Shinjuku', lat: 35.6896, lng: 139.7006, category: 'personal', source: 'seed', coordKind: 'approx', fav: false, locked: false, visited: false, emoji: '🏨', home: !hasHome });
     set(KEYS.places, places);
   }
   set(KEYS.seed, true);

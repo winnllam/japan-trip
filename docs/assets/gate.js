@@ -23,7 +23,7 @@ export function mountGate(onUnlock) {
     <form class="gate-card" id="gateForm" autocomplete="off">
       <div class="gate-mark" aria-hidden="true"></div>
       <h1 class="gate-title">私の一年</h1>
-      <p class="gate-sub">My Year in Japan</p>
+      <p class="gate-sub">My Japan Trip</p>
       <label class="gate-label" for="gatePw">Enter passphrase</label>
       <input class="gate-input" id="gatePw" type="password" inputmode="text"
              autocomplete="off" aria-label="Passphrase" autofocus>

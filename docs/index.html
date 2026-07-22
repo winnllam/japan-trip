@@ -11,15 +11,15 @@
      img also allows event-art hosts (#136): lh3.googleusercontent.com, cdn.leekduck.com, pokemoncenter-online.com. -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com https://lh3.googleusercontent.com https://cdn.leekduck.com https://www.pokemoncenter-online.com; connect-src 'self' https://nominatim.openstreetmap.org https://jotoba.de https://api.mymemory.translated.net https://api.open-meteo.com https://open.er-api.com https://api.p2pquake.net https://en.wikipedia.org http://127.0.0.1:8765 https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
-<title>My Year in Japan — Trip Dashboard</title>
-<meta name="description" content="A personal, password-gated trip dashboard for a working-holiday year in Tokyo — editable calendar, booking deadlines, paperwork, seasons, food and Disney.">
+<title>My Japan Trip — Autumn 2026</title>
+<meta name="description" content="A personal, password-gated trip dashboard for a Tokyo tourist trip (Oct–Nov 2026) — editable calendar, booking deadlines, day plans, maps, seasons, food and Disney.">
 <meta name="theme-color" content="#bc002d" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14141a" media="(prefers-color-scheme: dark)">
-<link rel="canonical" href="https://sizbei.github.io/japan-working-holiday/">
+<link rel="canonical" href="https://winnllam.github.io/japan-trip/">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png"><!-- iOS ignores SVG touch icons -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2011%2011%22%20shape-rendering%3D%22crispEdges%22%3E%3Crect%20width%3D%2211%22%20height%3D%2211%22%20fill%3D%22%23f7f4ee%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%220%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%221%22%20width%3D%225%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%223%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%224%22%20width%3D%229%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%225%22%20width%3D%229%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%221%22%20y%3D%226%22%20width%3D%229%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%227%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%228%22%20width%3D%227%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%229%22%20width%3D%225%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2210%22%20width%3D%223%22%20height%3D%221%22%20fill%3D%22%23bc002d%22%2F%3E%3C%2Fsvg%3E">
-<meta property="og:title" content="My Year in Japan — Trip Dashboard">
+<meta property="og:title" content="My Japan Trip — Autumn 2026">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +36,7 @@
 <!-- Top bar: countdown (left) · notifications bell + theme (top-right) -->
 <div class="topbar">
   <button id="navToggle" class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="routeNav"><span class="nav-toggle-i" aria-hidden="true">☰</span></button>
-  <a class="topbar-brand" href="#main"><span class="tb-sun" aria-hidden="true"></span> <span data-i18n="brand">My Year in Japan</span></a>
+  <a class="topbar-brand" href="#main"><span class="tb-sun" aria-hidden="true"></span> <span data-i18n="brand">My Japan Trip</span></a>
   <span class="countdown" id="countdown" aria-hidden="true"></span>
   <div class="topbar-right">
     <button id="pocketBtn" class="pocket-btn" type="button" aria-label="Emergency — numbers, tonight's stay, offline" title="Emergency: dial numbers · tonight's stay · works offline"><span aria-hidden="true">🆘</span></button>
@@ -54,7 +54,7 @@
 
 <nav class="route-nav" id="routeNav" aria-label="Primary navigation">
   <div class="nav-drawer-head">
-    <span class="nav-brand" aria-hidden="true"><span class="tb-sun"></span> My Year in Japan</span><!-- decorative dupe of the topbar brand — but the ✕ below must NOT sit inside aria-hidden (focusable-but-unannounceable) -->
+    <span class="nav-brand" aria-hidden="true"><span class="tb-sun"></span> My Japan Trip</span><!-- decorative dupe of the topbar brand — but the ✕ below must NOT sit inside aria-hidden (focusable-but-unannounceable) -->
     <button type="button" class="nav-close" id="navClose" aria-label="Close menu">✕</button>
   </div>
   <a href="#/dashboard" data-route="dashboard" data-i18n="nav.dashboard">Dashboard</a>
@@ -63,12 +63,10 @@
   <a href="#/map" data-route="map" data-i18n="nav.map">Map</a>
   <a href="#/explore" data-route="explore" data-i18n="nav.explore">Explore</a>
   <a href="#/eats" data-route="eats" data-i18n="nav.eats">Eats</a>
-          <a href="#/people" data-route="people">People</a>
   <a href="#/checklist" data-route="checklist" data-i18n="nav.checklist">Checklist</a>
   <a href="#/budget" data-route="budget" data-i18n="nav.budget">Budget</a>
-  <a href="#/rooms" data-route="rooms" data-i18n="nav.rooms">Rooms</a>
   <a href="#/emergency" data-route="emergency" data-i18n="nav.emergency">Emergency</a>
-  <div class="nav-drawer-foot" aria-hidden="true"><span class="nav-foot-jp" lang="ja">私の一年</span><span class="nav-foot-count">2026 — 2027</span></div>
+  <div class="nav-drawer-foot" aria-hidden="true"><span class="nav-foot-jp" lang="ja">日本の旅</span><span class="nav-foot-count">OCT — NOV 2026</span></div>
 </nav>
 <div class="nav-backdrop" id="navBackdrop" hidden></div>
 
@@ -79,8 +77,8 @@
   <!-- ===== ALMANAC (暦) home — spine | seasonal hero | almanac columns ===== -->
   <div class="alm">
     <aside class="alm-spine" aria-hidden="true">
-      <span class="spine-jp" lang="ja">私の一年</span>
-      <span class="spine-years">2026 — 2027</span>
+      <span class="spine-jp" lang="ja">日本の旅</span>
+      <span class="spine-years">OCT — NOV 2026</span>
       <span class="spine-rule"></span>
       <div class="hanko" lang="ja"><span>私</span><span>の</span><span>一</span><span>年</span></div>
     </aside>
@@ -91,7 +89,7 @@
       <section class="sekki" aria-labelledby="heroTitleH">
         <div class="sekki-info">
           <p class="sekki-kicker"><span lang="ja">二十四節気</span> · my save file · tokyo</p>
-          <h1 class="sekki-name" id="heroTitleH">My Year in Japan</h1>
+          <h1 class="sekki-name" id="heroTitleH">My Japan Trip</h1>
           <p class="sekki-72" id="sekkiKo" hidden></p>
           <p class="sekki-wx wx-strip" id="wxStrip" hidden></p>
         </div>
@@ -104,7 +102,7 @@
             </svg>
             <div class="dial-core"><b class="hc-num">—</b><span class="hc-unit"></span></div>
           </div>
-          <p class="dial-cap hc-date">NRT · 2026-06-30</p>
+          <p class="dial-cap hc-date">HND · 2026-10-19</p>
         </div>
       </section>
 
@@ -132,28 +130,16 @@
         </div>
       </div>
 
-      <!-- 北海道 Hokkaido week — the baked `itinerary` day-by-day, spotlit during the trip window
+      <!-- 小旅行 side trip — the baked `itinerary` day-by-day, spotlit during its window
            (dashboard.js renderHokkaido fills .widget-body and toggles [hidden]) -->
       <section class="alm-card hok-card" id="wHokkaido" aria-labelledby="hHok" hidden>
-        <h2 class="alm-h" id="hHok"><span class="jp2" lang="ja">北海道</span><span class="rom">hokkaido week</span></h2>
-        <div class="widget-body"></div>
-      </section>
-
-      <!-- 文法帖 The Grammar Almanac — the R11 habit widget (dashboard.js fills .widget-body) -->
-      <section class="alm-card stw-card" id="wStudy" aria-labelledby="hStudy">
-        <h2 class="alm-h" id="hStudy"><span class="jp2" lang="ja">文法帖</span><span class="rom">grammar almanac</span></h2>
+        <h2 class="alm-h" id="hHok"><span class="jp2" lang="ja">小旅行</span><span class="rom">side trip</span></h2>
         <div class="widget-body"></div>
       </section>
 
       <!-- this week strip -->
       <section class="almwk" id="wWeek" aria-labelledby="hWk">
         <h2 class="alm-h" id="hWk"><span class="jp2" lang="ja">今週</span><span class="rom" id="weekRom">this week</span></h2>
-        <div class="widget-body"></div>
-      </section>
-
-      <!-- phrase of the day (phraseday.js fills .widget-body) -->
-      <section class="alm-card phr" id="wPhrase" aria-labelledby="hPhr">
-        <h2 class="alm-h" id="hPhr"><span class="jp2" lang="ja">今日の一言</span><span class="rom">phrase of the day</span></h2>
         <div class="widget-body"></div>
       </section>
 
@@ -225,17 +211,6 @@
 
   </div><!-- /view-calendar -->
 
-  <div class="view" id="view-people" data-route="people">
-  <section id="people">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">縁</span><h2>People</h2></div>
-    <p class="lede">Names, faces, and the little details worth remembering — everyone I've met this year. <b>Saved on this device only; never leaves it.</b></p>
-    <div class="ppl-bar" id="pplBar"></div>
-    <div class="chips" id="pplFilters"></div>
-    <div id="pplDrift"></div>
-    <div id="pplList"></div>
-  </section>
-  </div><!-- /view-people -->
-
   <div class="view" id="view-deadlines" data-route="deadlines">
   <!-- ============ LOTTERY / TIMED-RELEASE TRACKER ============ -->
   <section id="trackerSection">
@@ -246,7 +221,7 @@
 
   <!-- ============ DEADLINES ============ -->
   <section class="block callout" id="timeSensitiveSection">
-    <h2><span class="emoji" aria-hidden="true">⏰</span> <span data-i18n="head.timesensitive">Time-Sensitive — anchored to June 30, 2026 arrival</span></h2>
+    <h2><span class="emoji" aria-hidden="true">⏰</span> <span data-i18n="head.timesensitive">Time-Sensitive — anchored to your Oct 19, 2026 landing</span></h2>
     <div class="table-wrap">
       <table id="timeTable">
         <thead><tr><th>Item</th><th>Timing</th><th>Action</th></tr></thead>
@@ -266,8 +241,8 @@
   <div class="view" id="view-checklist" data-route="checklist">
   <!-- ============ CHECKLIST ============ -->
   <section id="checklist">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">一年の計画</span><h2 data-i18n="head.checklist">My Yearlong Checklist</h2></div>
-    <p class="lede" data-i18n="lede.checklist">Phased across the year. Locked steps unlock once their prerequisite is done; tap 📅 to set a due date (it flows into your notifications). Progress saves on this device.</p>
+    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">旅の準備</span><h2 data-i18n="head.checklist">My Trip Checklist</h2></div>
+    <p class="lede" data-i18n="lede.checklist">Grouped by phase — before you fly, landing day, the trip itself, and heading home. Locked steps unlock once their prerequisite is done; tap 📅 to set a due date (it flows into your notifications). Progress saves on this device.</p>
     <div class="check-progress" id="checkProgress" hidden>
       <span class="pct" id="checkPct" role="status" aria-live="polite">0%</span>
       <div class="bar"><i id="checkBar"></i></div>
@@ -286,7 +261,7 @@
   <!-- ============ PACKING ============ -->
   <section id="packing">
     <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">荷造り</span><h2 data-i18n="head.packing">What to Pack</h2></div>
-    <p class="lede" data-i18n="lede.packing">The Canada → Tokyo packing list — kept for reference (and the eventual move back): documents, money, electronics, clothing, health, a day-one bag and more. Add your own items; progress saves on this device.</p>
+    <p class="lede" data-i18n="lede.packing">Your autumn-trip packing list — documents, money, electronics, layered clothing, health, a day bag and more. Add your own items; progress saves on this device.</p>
     <div class="check-progress" id="packProgress">
       <span class="pct" id="packPct" role="status" aria-live="polite">0%</span>
       <div class="bar"><i id="packBar"></i></div>
@@ -306,7 +281,7 @@
   <!-- ============ BUDGET ============ -->
   <section id="budget">
     <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">予算</span><h2 data-i18n="head.budget">Budget Planner</h2></div>
-    <p class="lede" data-i18n="lede.budget">Track the monthly running costs of living here — set your savings and any income, and see the bottom line: monthly burn, net, and how many months of runway are left (setup costs still itemized separately). Estimates below are editable; log real spends in the card above them to see your actual burn. All numbers save on this device.</p>
+    <p class="lede" data-i18n="lede.budget">Estimate what the trip costs — flights, stay and tickets up front, plus your daily spend once you're there. Set your budget and any income, and log real spends in the card above to track the bottom line. Estimates below are editable; all numbers save on this device.</p>
     <div class="bdg-summary alm-card" id="budgetSummary" role="status" aria-live="polite"></div>
     <div id="spendCard" class="spend-card alm-card"></div>
     <div class="bdg-config alm-card">
@@ -336,89 +311,11 @@
   </section>
   </div><!-- /view-budget -->
 
-  <div class="view" id="view-phrases" data-route="phrases">
-  <!-- ============ PHRASEBOOK ============ -->
-  <section id="phrases">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">言葉</span><h2 data-i18n="head.phrases">Survival Japanese</h2></div>
-    <p class="lede" data-i18n="lede.phrases">Your Japanese studio — blast through the Core-2000 refresher up top, look words up and save your own phrases, and drill JLPT grammar. Beginner references (kana, numbers, N5 vocab, signs…) live folded at the bottom.</p>
-    <!-- Core deck — the study hero, first on the page -->
-    <section id="ankiDeck" class="ank-wrap" aria-label="Core deck rapid refresher"></section>
-    <span id="ankLive" class="sr-only" aria-live="polite" aria-atomic="true"></span><!-- SIBLING of #ankiDeck: a live region inside the innerHTML-rebuilt root could never announce -->
-    <p class="g-xlink"><a href="#/grammar">📖 JLPT grammar reference (N5–N1) →</a> · <a href="#/survival">🗣 Useful survival phrases →</a></p>
-    <div class="jtools" role="group" aria-label="Japanese tools">
-      <button type="button" class="jt-btn" id="jtLookupBtn" aria-expanded="false" aria-controls="jtLookupPanel">🔍 Look up</button>
-      <button type="button" class="jt-btn" id="jtTranslateBtn" aria-expanded="false" aria-controls="jtTranslatePanel">あ→A Translate</button>
-      <div class="jt-anki">
-        <button type="button" class="jt-btn" id="jtExport">⬇ Export to Anki</button>
-        <button type="button" class="jt-btn" id="jtImport">⬆ Import from Anki</button>
-        <label class="jt-scope"><input type="checkbox" id="jtFavScope"> ★ only</label>
-      </div>
-    </div>
-    <div class="jt-panel" id="jtLookupPanel" hidden></div>
-    <div class="jt-panel" id="jtTranslatePanel" hidden></div>
-    <input type="file" id="jtImportFile" accept=".txt,.tsv,.csv" hidden>
-    <div class="pack-tools">
-      <button type="button" id="phraseCollapseAll" class="ct-toggle">Collapse / expand all</button>
-      <button type="button" id="phraseFavOnly" class="ct-toggle" aria-pressed="false">☆ Favorites only</button>
-      <button type="button" id="phraseFuri" class="ct-toggle" aria-pressed="true">あ Furigana</button>
-    </div>
-    <h3 class="ph-h">My phrases</h3>
-    <div id="phraseList"></div>
-    <details class="beginner-drawer" id="beginnerDrawer">
-      <summary>Beginner reference — kana · numbers · N5 vocab · signs · quiz · particles · verbs · adjectives · pronunciation</summary>
-      <div class="vocab-wrap">
-        <h3 class="vocab-h" data-i18n="head.vocab">Starter words · JLPT N5</h3>
-        <p class="vocab-sub">Tap a theme to study — 🔊 to hear each word; the ふりがな toggle above hides readings.</p>
-        <div id="vocabList"></div>
-      </div>
-      <div id="kanaChart" class="kana-wrap"></div>
-      <div id="numbersRef" class="num-wrap"></div>
-      <div id="signsRef" class="signs-wrap"></div>
-      <div id="quizMode" class="quiz-wrap"></div>
-      <div id="particlesRef" class="part-wrap"></div>
-      <div id="verbsRef" class="verb-wrap"></div>
-      <div id="adjRef" class="verb-wrap"></div>
-      <div id="pronTips" class="pron-wrap"></div>
-    </details>
-  </section>
-  </div><!-- /view-phrases -->
-
-  <div class="view" id="view-grammar" data-route="grammar">
-  <section id="grammar">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">文法</span><h2>JLPT Grammar</h2></div>
-    <p class="lede">JLPT grammar N5–N1 with original examples from the working-holiday year. Tap or hover any underlined word for its reading — the colored underline is the grammar pattern itself. Levels load as they're researched; N5 is seeded now.</p>
-    <div id="grammarRoot"></div>
-    <span id="gLive" class="sr-only" aria-live="polite" aria-atomic="true"></span><!-- SIBLING of #grammarRoot: a live region inside the innerHTML-rebuilt root could never announce -->
-  </section>
-  </div><!-- /view-grammar -->
-
-  <div class="view" id="view-study" data-route="study">
-  <section id="study">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">文法帖</span><h2>The Grammar Almanac</h2></div>
-    <p class="lede">A bounded daily grammar workout — typed-cloze review on your due JLPT points, scheduled by a spaced-repetition engine. Every answer saves instantly, so a killed tab resumes at the exact card.</p>
-    <div id="studyRoot" data-no-swipe></div>
-    <span id="stuLive" class="sr-only" aria-live="polite" aria-atomic="true"></span><!-- SIBLING of #studyRoot: a live region inside the innerHTML-rebuilt root could never announce -->
-  </section>
-  </div><!-- /view-study -->
-
-  <div class="view" id="view-survival" data-route="survival">
-  <section id="survival">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">便利</span><h2>Useful phrases</h2></div>
-    <p class="lede">Survival-Japanese phrases — konbini, ward-office paperwork, apartment hunting, restaurants, transit, emergencies and daily life, each with the Japanese, a reading, and the English meaning. Hover any Japanese for its reading; ★ favorites are shared with the studio page and save on this device.</p>
-    <div class="pack-tools">
-      <button type="button" id="svCollapseAll" class="ct-toggle">Collapse / expand all</button>
-      <button type="button" id="svFavOnly" class="ct-toggle" aria-pressed="false">☆ Favorites only</button>
-      <button type="button" id="svFuri" class="ct-toggle" aria-pressed="true">あ Furigana</button>
-    </div>
-    <div id="svList"></div>
-  </section>
-  </div><!-- /view-survival -->
-
   <div class="view" id="view-explore" data-route="explore">
   <div id="exploreWeek" class="exp-week" hidden role="region" aria-label="Events this week"></div>
   <!-- ============ SEARCHABLE LOGISTICS ============ -->
   <section class="controls" id="controls">
-    <input type="search" id="search" placeholder="SEARCH LOGISTICS // bank · pension · suica" aria-label="Search tips">
+    <input type="search" id="search" placeholder="SEARCH TIPS // suica · tax-free · koyo" aria-label="Search tips">
     <div class="filters" id="confFilters">
       <button class="chip active" data-conf="all">All</button>
       <button class="chip" data-conf="high">High confidence</button>
@@ -576,44 +473,6 @@
   </section>
   </div><!-- /view-eats -->
 
-  <div class="view" id="view-rooms" data-route="rooms">
-  <section id="rooms">
-    <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">部屋探し</span><h2 data-i18n="head.rooms">Find a Room</h2></div>
-    <p class="lede" data-i18n="lede.rooms" data-i18n-html>Foreigner-friendly share houses &amp; apartments — no key money, no guarantor — tour a few before committing. These are starting points (no provider has a public listings API); hit the links for live availability. <span id="roomCount" class="room-count" role="status" aria-live="polite"></span></p>
-    <div id="roomFilters">
-      <input type="search" id="roomSearch" placeholder="FILTER ROOMS // nakano · women · oakhouse · dorm…" aria-label="Filter rooms">
-      <label class="room-budget" for="roomBudget">Budget <output id="roomBudgetVal">Any</output>
-        <input type="range" id="roomBudget" min="30000" max="200000" step="5000" value="200000" aria-label="Maximum monthly rent">
-      </label>
-      <label class="room-sort" for="roomSort">Sort
-        <select id="roomSort" aria-label="Sort rooms">
-          <option value="newcomer">Newcomer-friendly</option>
-          <option value="rent">Rent (low→high)</option>
-          <option value="movein">Move-in cost (low→high)</option>
-          <option value="soonest">Move-in soonest</option>
-        </select>
-      </label>
-      <div class="filters" id="roomTypeF" role="group" aria-label="Room type">
-        <button class="chip active" data-room="all" type="button" aria-pressed="true">Any room</button>
-        <button class="chip" data-room="private" type="button" aria-pressed="false">Private</button>
-        <button class="chip" data-room="dorm" type="button" aria-pressed="false">Dorm</button>
-      </div>
-      <div class="filters" id="roomLines" role="group" aria-label="Area / line"></div>
-      <div class="filters" id="roomToggles" role="group" aria-label="Filters">
-        <button class="chip toggle" id="roomNoKey" type="button" aria-pressed="false">No key money</button>
-        <button class="chip toggle" id="roomNoGuar" type="button" aria-pressed="false">No guarantor</button>
-        <button class="chip toggle" id="roomAbroad" type="button" aria-pressed="false">Book from abroad</button>
-        <button class="chip toggle" id="roomWomen" type="button" aria-pressed="false">Women-only</button>
-        <button class="chip toggle" id="roomFurnished" type="button" aria-pressed="false">Furnished</button>
-        <button class="chip toggle" id="roomShortTerm" type="button" aria-pressed="false">Short-term OK</button>
-        <button class="chip toggle" id="roomSavedOnly" type="button" aria-pressed="false">★ Saved</button>
-      </div>
-      <button class="room-reset" id="roomReset" type="button" hidden>↺ Reset filters</button>
-    </div>
-    <div class="grid" id="roomsGrid"></div>
-    <div id="roomCompareBar" class="room-compare-bar" hidden role="region" aria-label="Compare selection"></div>
-  </section>
-  </div><!-- /view-rooms -->
   <div class="view" id="view-map" data-route="map">
   <section id="map">
     <div class="pillar-head"><span class="jp" lang="ja" aria-hidden="true">地図</span><h2 data-i18n="head.map">My Tokyo Map</h2></div>
@@ -672,7 +531,7 @@
 <div id="printView" hidden></div>
 
 <footer>
-  <p>My Year in Japan · last updated <span id="footGen"></span></p>
+  <p>My Japan Trip · last updated <span id="footGen"></span></p>
   <div class="backup">
     <button type="button" id="backupExport" class="backup-btn" title="Download all your events, places, checklist and notes as a file">⬇ Back up my data</button>
     <button type="button" id="backupImport" class="backup-btn" title="Restore from a backup file (replaces data on this device)">⬆ Restore</button>
@@ -680,7 +539,7 @@
     <input type="file" id="backupFile" accept="application/json,.json" hidden>
     <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
   </div>
-  <p class="disclaimer">Everything you edit is saved only in this browser — back it up before clearing data or switching phones. Visa, tax, pension, Disney and booking systems all change — I verify against official sources before relying on anything here. Confidence flags and “verify closer” notes mark what to re-check. The passphrase is convenience only, not real security.</p>
+  <p class="disclaimer">Everything you edit is saved only in this browser — back it up before clearing data or switching phones. Entry rules, transport, ticketing, Disney and booking systems all change — verify against official sources before relying on anything here. Confidence flags and “verify closer” notes mark what to re-check. The passphrase is convenience only, not real security.</p>
 </footer>
 
 <!-- first-paint route selector: mark the hash's view active before the deferred module boots,

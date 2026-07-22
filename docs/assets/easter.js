@@ -442,7 +442,7 @@ export function consoleArt() {
       '  ▀▀███████▀▀  ',
     ].join('\n');
     console.log('%c' + sun, 'color:#bc002d;font-weight:700;line-height:1.05');
-    console.log('%cMy Year in Japan — built in vanilla JS, no frameworks, no build step. Land NRT 2026-06-30. ⛩️',
+    console.log('%cMy Japan Trip — built in vanilla JS, no frameworks, no build step. Land HND 2026-10-19. ⛩️',
       'color:#223a70;font-weight:600');
     console.log('%cpsst — try ↑↑↓↓←→←→ b a, or type "synth" in a search box.', 'color:#b8860b');
   } catch {}

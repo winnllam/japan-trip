@@ -21,7 +21,7 @@ function descOf(e) {
   return [e.bookingNotes, e.note, e.why, (e.sources && e.sources[0])].filter(Boolean).join('\n');
 }
 
-export function toICS(events, calName = 'My Year in Japan') {
+export function toICS(events, calName = 'My Japan Trip') {
   const out = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//jwh//trip//EN',
     'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${esc(calName)}`];
   for (const e of (events || [])) {

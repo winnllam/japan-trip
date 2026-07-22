@@ -20,7 +20,6 @@ import { loadPlans } from './lib/dayplan.js';
 import { summary, fmtYen } from './lib/budget.js';
 import { progress } from './lib/packing.js';
 import { sekkiFor } from './lib/sekki.js';
-import { migrate as migrateStudy, buildQueue, streakInfo, weeklyInfo, masteryStats } from './lib/study.js';
 import { legStatus, focusDays } from './lib/itinerary.js';
 
 let DATA = null, TODAY = nowISO();
@@ -76,7 +75,7 @@ function refreshTeasers() {
   const savings = (get(KEYS.budget, {}) || {}).savings || 0;
   const fx = get(KEYS.fx, null);
   const usd = (fx && Number.isFinite(fx.usd) && Number.isFinite(fx.at) && Date.now() - fx.at < 48 * 3600e3) ? fx.usd : null;
-  const arrived = countdown(DATA.meta?.arrival_date || '2026-06-30', nowISO()).phase === 'arrived';
+  const arrived = countdown(DATA.meta?.arrival_date || '2026-10-19', nowISO()).phase === 'arrived';
   // "to land" is a paid sunk cost once arrived — show monthly burn instead. USD twin follows suit.
   const yenFig = arrived ? s.monthlyTotal : s.toLand;
   const inUsd = (usd && yenFig > 0) ? ` (~$${Math.round(yenFig * usd).toLocaleString('en-US')})` : '';
@@ -118,14 +117,6 @@ function buildItems() {
     if (start >= TODAY) items.push({ id: 'ev-' + e.id + '@' + start, title: e.title, when: start, kind: 'event', detail: e.area }); // future starts only — not already-running seasons
     if (e.bookBy && e.source === 'user') items.push({ id: 'bk-' + e.id + '@' + e.bookBy, title: 'Book: ' + e.title, when: e.bookBy, kind: 'book', detail: e.bookingNotes });   // baked book-by already covered by bookByTimeline — don't double-count
   });
-  // R11: grammar reviews due today — ONE aggregate item (never one per point), fed through the same
-  // computeAlerts/dismiss/GC pipeline as everything else. The @date-encoded id means today's dismiss
-  // suppresses only today; tomorrow mints a fresh id. No overlap with any other source (its own kind).
-  const study = get(KEYS.study, null);
-  if (study) {
-    const dueN = buildQueue(migrateStudy(study), Date.now()).reviews.length;
-    if (dueN > 0) items.push({ id: 'study-reviews@' + TODAY, title: dueN + ' grammar review' + (dueN === 1 ? '' : 's') + ' due', when: TODAY, kind: 'review', detail: 'The Grammar Almanac — clear them in one bounded session.' });
-  }
   // Drop dead history: a deadline/book/task more than 30 days past isn't actionable — it's just
   // clutter that re-floods the bell. Future + ≤30-day-past items are kept (still worth surfacing).
   const floor = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
@@ -137,7 +128,7 @@ const WDAY_JP = ['日', '月', '火', '水', '木', '金', '土'];
 const WDAY_EN = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 function renderSekki() {
   const s = sekkiFor(TODAY);
-  if (!s) return;   // lookup failed — the static "My Year in Japan" heading stays
+  if (!s) return;   // lookup failed — the static "My Japan Trip" heading stays
   const h1 = $('#heroTitleH');
   if (h1) h1.innerHTML = `${esc(s.sekki.kanji)}<small>${esc(s.sekki.romaji)} — ${esc(s.sekki.en)} · ${esc(fmtShort(s.sekki.startISO))} – ${esc(fmtShort(s.sekki.endISO))}</small>`;
   const ko = $('#sekkiKo');
@@ -162,16 +153,17 @@ function renderSekki() {
 // ---- countdown: the hinomaru year dial (canonical) + small topbar copy ----
 // Recomputes "today" each call so the minute-timer (mountDashboard) rolls the count over at midnight.
 const DIAL_C = 2 * Math.PI * 52;   // circumference of the r=52 dial circle
+const TRIP_DAYS = 26;              // trip length, land HND 2026-10-19 → depart 2026-11-13 (inclusive)
 function renderCountdown() {
   if (nowISO() !== TODAY) refresh();   // midnight rolled over — recompute alerts/widgets, not just the number
-  const c = countdown(DATA.meta?.arrival_date || '2026-06-30', nowISO());
+  const c = countdown(DATA.meta?.arrival_date || '2026-10-19', nowISO());
   const arrived = c.phase === 'arrived';
   // day-in-Japan counts INCLUSIVELY (landing day = day 1) — matches the Progress card
   const dayN = arrived ? (c.days ?? 0) + 1 : c.days;
   // topbar (decorative, aria-hidden in markup)
   const el = $('#countdown');
   if (el) {
-    const unit = arrived ? (dayN === 1 ? 'DAY IN' : 'DAYS IN') : (dayN === 1 ? 'DAY TO NRT' : 'DAYS TO NRT');
+    const unit = arrived ? (dayN === 1 ? 'DAY IN' : 'DAYS IN') : (dayN === 1 ? 'DAY TO HND' : 'DAYS TO HND');
     const html = `<span class="cd-num">${dayN ?? ''}</span><span class="cd-label">${unit}</span><span class="cd-credit">CREDIT 01</span>`;
     if (el.innerHTML !== html) el.innerHTML = html;
     el.classList.toggle('arrived', arrived);
@@ -183,16 +175,16 @@ function renderCountdown() {
     const num = String(dayN ?? '');
     const numEl = hero.querySelector('.hc-num');
     if (numEl?.textContent !== num) {
-      const unit = arrived ? 'of 365 日' : (dayN === 1 ? 'day to NRT' : 'days to NRT');
+      const unit = arrived ? `of ${TRIP_DAYS} 日` : (dayN === 1 ? 'day to HND' : 'days to HND');
       if (numEl) numEl.textContent = num;
       const unitEl = hero.querySelector('.hc-unit');
       if (unitEl) unitEl.textContent = unit;
-      hero.setAttribute('aria-label', arrived ? `Day ${num} of 365 in Japan` : `${num} days until landing`);
-      // the red arc: elapsed share of the year (CSS transitions the first set → a one-time draw-in)
+      hero.setAttribute('aria-label', arrived ? `Day ${num} of ${TRIP_DAYS} in Japan` : `${num} days until landing`);
+      // the red arc: elapsed share of the trip (CSS transitions the first set → a one-time draw-in)
       const arc = $('#dialArc');
-      if (arc) arc.style.strokeDasharray = `${arrived ? Math.min(DIAL_C, (Number(dayN) / 365) * DIAL_C).toFixed(1) : 0} 999`;
+      if (arc) arc.style.strokeDasharray = `${arrived ? Math.min(DIAL_C, (Number(dayN) / TRIP_DAYS) * DIAL_C).toFixed(1) : 0} 999`;
       const dateEl = $('.dial-cap');
-      if (dateEl) dateEl.textContent = arrived ? 'landed NRT · 2026-06-30' : 'NRT · 2026-06-30';
+      if (dateEl) dateEl.textContent = arrived ? 'landed HND · 2026-10-19' : 'HND · 2026-10-19';
     }
     hero.classList.toggle('arrived', arrived);
   }
@@ -227,8 +219,8 @@ function renderBadge(alerts) {
   const overdue = alerts.some(a => a.severity === 'overdue');
   badge.classList.toggle('hot', overdue);
 }
-const ICON = { deadline: '⚖️', book: '🎟️', task: '✅', event: '📅', review: '🎴' };
-const ROUTE_FOR = { deadline: '#/deadlines', book: '#/deadlines', task: '#/checklist', event: '#/calendar', review: '#/study' };
+const ICON = { deadline: '⚖️', book: '🎟️', task: '✅', event: '📅' };
+const ROUTE_FOR = { deadline: '#/deadlines', book: '#/deadlines', task: '#/checklist', event: '#/calendar' };
 function clip(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s; }
 function renderPanel(alerts) {
   const panel = $('#notifPanel');
@@ -297,7 +289,6 @@ function renderWidgets(alerts) {
   renderSpend();
   fill('#wDeadlines', alerts.filter(a => a.kind === 'deadline' || a.kind === 'task' || a.kind === 'book'), 6);
   renderProgress();
-  renderStudy();
   renderTeasers();
 }
 
@@ -344,65 +335,6 @@ function renderHokkaido() {
     + status.days.map((d, i) => hokDayHTML(d, i, status.todayIdx, focus.has(i))).join('')
     + `<p class="hok-foot"><a href="#/calendar">open in the calendar →</a></p>`;
 }
-
-// ---- 文法ジム Grammar Gym widget (R11 habit dashboard) ----------------------------------------
-// The daily front door to #/study: today's due-review count → a ▶ Train button, the days-shown-up
-// streak flame (+ monthly freeze bank + an at-risk nudge), the weekly-goal ring, and per-level
-// goal-gradient mastery rings. All state is derived by the pure lib selectors (streakInfo /
-// weeklyInfo / masteryStats / buildQueue) from jwh-study-v1 — read fresh each render. The flame's
-// pulse + the rings' draw-in are CSS-only, so the app's reduce-motion toggle (and the OS setting)
-// stop them. Every dynamic string through esc().
-function stwRingHTML(done, total, aria) {
-  const pct = total ? Math.round(done / total * 100) : 0;
-  const C = 2 * Math.PI * 15.5, off = C * (1 - pct / 100);
-  return `<span class="stw-ring" role="img" aria-label="${esc(aria)}">
-    <svg viewBox="0 0 36 36" aria-hidden="true"><circle class="stw-ring-bg" cx="18" cy="18" r="15.5"/>
-    <circle class="stw-ring-fg" cx="18" cy="18" r="15.5" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg>
-    <span class="stw-ring-txt">${esc(String(done))}<small>/${esc(String(total))}</small></span></span>`;
-}
-function renderStudy() {
-  const el = $('#wStudy');
-  if (!el) return;
-  const body = el.querySelector('.widget-body');
-  if (!body) return;
-  const stored = get(KEYS.study, null);
-  if (!stored) {   // never opened the gym — a plain onboarding CTA, no streak/rings to show
-    body.innerHTML = `<a class="stw-cta" href="#/study"><b>▶ Start The Grammar Almanac</b><small>Drill JLPT grammar — one bounded session a day</small></a>`;
-    return;
-  }
-  const st = migrateStudy(stored);
-  const due = buildQueue(st, Date.now()).reviews.length;
-  const si = streakInfo(st, TODAY);
-  const wi = weeklyInfo(st, TODAY);
-  const ms = masteryStats(st);
-
-  const levels = ['N5', 'N4', 'N3', 'N2', 'N1'].filter(l => ms.perLevel[l] > 0);
-  const masteryHTML = levels.length
-    ? `<div class="stw-mastery">${levels.map(l =>
-        `<div class="stw-lvl">${stwRingHTML(ms.perLevel[l], ms.totals[l], `${l} ${ms.perLevel[l]} of ${ms.totals[l]} mastered`)}<span class="stw-lvl-l">${esc(l)}</span></div>`).join('')}</div>`
-    : `<p class="stw-hint">No points mastered yet — the rings fill as you clear mastery gates.</p>`;
-  const trainLabel = due > 0 ? `▶ Train — ${due} due` : '▶ Open the almanac';
-  const riskHTML = si.atRisk
-    ? `<p class="stw-risk">Study today to keep your ${esc(String(si.count))}-day streak alive.</p>` : '';
-
-  body.innerHTML = `
-    <div class="stw-top">
-      <div class="stw-streak${si.atRisk ? ' is-risk' : ''}" role="img" aria-label="${esc(String(si.count))} day streak, ${esc(String(si.freezes))} freezes left this month">
-        <span class="stw-flame" aria-hidden="true">連</span>
-        <span class="stw-streak-n">${esc(String(si.count))}</span>
-        <span class="stw-streak-l">day${si.count === 1 ? '' : 's'}<br>streak</span>
-        <span class="stw-freeze" title="Streak freezes left this month">❄${esc(String(si.freezes))}</span>
-      </div>
-      <div class="stw-week">
-        ${stwRingHTML(wi.done, wi.goal, `${wi.done} of ${wi.goal} sessions this week`)}
-        <span class="stw-week-l">this<br>week</span>
-      </div>
-    </div>
-    ${riskHTML}
-    ${masteryHTML}
-    <a class="stw-train" href="#/study">${esc(trainLabel)}</a>`;
-}
-
 
 // Trip-mode band — leads the Today widget while a stay-event chain covers today
 // (lib/trip.js). Links to #/emergency: the SW-cached page where the stay card lives
@@ -611,20 +543,10 @@ function renderProgress() {
     return `<a class="prg-lbl" href="${href}"><span class="n"><b lang="ja">${jp}</b>${en}</span><span class="v">${done} / ${total}</span></a>
       <div class="prg-bar" role="img" aria-label="${esc(en)} ${done} of ${total}"><i style="width:${pct}%"></i></div>`;
   };
-  const arrived = countdown(DATA.meta?.arrival_date || '2026-06-30', nowISO()).phase === 'arrived';
-  let rows;
-  if (arrived) {
-    const SETTLE = ['Do Now', 'Needs Residence', 'Needs Number', 'Later'];
-    const settle = (DATA.checklist || []).filter(p => SETTLE.some(x => (p.phase || '').startsWith(x))).flatMap(p => p.items || []);
-    const allChecks = checklistItems(DATA);
-    rows = `<div class="prg-row">${bar('定着', 'settling in', settle.filter(it => checks[it.id]).length, settle.length, '#/checklist')}</div>
-      <div class="prg-row">${bar('手続き', 'checklist', allChecks.filter(it => checks[it.id]).length, allChecks.length, '#/checklist')}</div>`;
-  } else {
-    const allChecks = checklistItems(DATA);
-    const pk = progress([...(DATA.packing || []), ...(get(KEYS.packCustom, []) || [])], get(KEYS.packing, {}) || {});
-    rows = `<div class="prg-row">${bar('手続き', 'checklist', allChecks.filter(it => checks[it.id]).length, allChecks.length, '#/checklist')}</div>
+  const allChecks = checklistItems(DATA);
+  const pk = progress([...(DATA.packing || []), ...(get(KEYS.packCustom, []) || [])], get(KEYS.packing, {}) || {});
+  const rows = `<div class="prg-row">${bar('準備', 'checklist', allChecks.filter(it => checks[it.id]).length, allChecks.length, '#/checklist')}</div>
       <div class="prg-row">${bar('荷造り', 'packing', pk.done, pk.total, '#/packing')}</div>`;
-  }
   el.querySelector('.widget-body').innerHTML = rows
     + `<p class="prg-meta"><a href="#/budget">budget ${esc(budgetWord)}</a><span aria-hidden="true">·</span>${yearStatsInline()}</p>`;
 }

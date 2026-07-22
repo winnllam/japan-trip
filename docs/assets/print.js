@@ -14,7 +14,7 @@ import { countdown, fmtShort } from './lib/dates.js';
 import { progress } from './lib/packing.js';
 import { summary, fmtYen, fmtCad } from './lib/budget.js';
 
-const ARRIVAL = '2026-06-30';
+const ARRIVAL = '2026-10-19';
 
 export function mountPrint(data, today) {
   const btn = $('#printBtn');
@@ -84,7 +84,7 @@ export function renderPrintSummary(data, today) {
 
   const cd = countdown(ARRIVAL, today);
   const daysLine = cd.phase === 'before'
-    ? `${esc(String(cd.days))} days to NRT (land ${esc(ARRIVAL)})`
+    ? `${esc(String(cd.days))} days to HND (land ${esc(ARRIVAL)})`
     : cd.phase === 'arrived' ? `Day ${esc(String(cd.days + 1))} in Japan` : '';
 
   const chk = checklistProgress(data);
@@ -113,7 +113,7 @@ export function renderPrintSummary(data, today) {
 
   view.innerHTML = `
     <header class="pv-header">
-      <h1>My Year in Japan — trip summary</h1>
+      <h1>My Japan Trip — trip summary</h1>
       <p class="pv-meta">Generated ${esc(today)}${daysLine ? ` · ${daysLine}` : ''}</p>
     </header>
 

@@ -58,20 +58,14 @@ DESKTOP.addEventListener('change', relocateNav);   // crossing 820px must restor
 // parseRoute validates against router ROUTES + HIDDEN, independent of nav visibility. ----
 const NAV_ALL = [
   { r: 'dashboard', label: 'Dashboard', i18n: 'nav.dashboard' },
-  { r: 'phrases', label: 'Phrases', i18n: 'nav.phrases' },   // owner: Phrases sits right after Dashboard (main study surface)
   { r: 'calendar', label: 'Calendar', i18n: 'nav.calendar' },
   { r: 'plan', label: 'Plan a Day', i18n: 'nav.plan' },
   { r: 'map', label: 'Map', i18n: 'nav.map' },
   { r: 'explore', label: 'Explore', i18n: 'nav.explore' },
   { r: 'eats', label: 'Eats', i18n: 'nav.eats' },
-  { r: 'people', label: 'People', i18n: null },        // people has no i18n key — stays English (as in index.html)
   { r: 'checklist', label: 'Checklist', i18n: 'nav.checklist' },
   { r: 'budget', label: 'Budget', i18n: 'nav.budget' },
-  { r: 'rooms', label: 'Rooms', i18n: 'nav.rooms' },
   { r: 'emergency', label: 'Emergency', i18n: 'nav.emergency' },
-  { r: 'survival', label: 'Useful phrases', i18n: 'nav.survival' },
-  { r: 'grammar', label: 'Grammar', i18n: 'nav.grammar' },
-  { r: 'study', label: 'The Grammar Almanac', i18n: 'nav.study' },
   { r: 'packing', label: 'Packing', i18n: 'nav.packing' },
   { r: 'deadlines', label: 'Deadlines', i18n: 'nav.deadlines' },
 ];
@@ -81,13 +75,13 @@ const NAV_META = (r) => NAV_ALL.find(o => o.r === r);
 // migrate the legacy navShow (which optional routes were surfaced) into a hidden set. Default (no
 // stored navHidden): hide all optional routes except phrases, PLUS the routes the owner doesn't use
 // (emergency/map/explore) — all still reachable by deep link and re-enableable in this panel.
-const NAV_HIDDEN_DEFAULT = ['emergency', 'map', 'explore', 'rooms', 'people'];   // owner: Rooms + People off the nav for now (deep links still work; re-enable in the panel)
+const NAV_HIDDEN_DEFAULT = [];   // tourist revamp: show the full tourist nav (map/explore/emergency included). Rooms + People routes were removed entirely.
 function navHiddenSet() {
   const v = get(KEYS.navHidden, null);
   if (Array.isArray(v)) return v.filter(r => NAV_KNOWN.has(r));
-  const OPT = ['phrases', 'survival', 'grammar', 'study', 'packing', 'deadlines'];
+  const OPT = ['packing', 'deadlines'];
   const shown = get(KEYS.navShow, null);
-  const shownArr = Array.isArray(shown) ? shown : ['phrases'];
+  const shownArr = Array.isArray(shown) ? shown : [];
   return [...OPT.filter(r => !shownArr.includes(r)), ...NAV_HIDDEN_DEFAULT];
 }
 function navOrder() {
@@ -192,11 +186,11 @@ function openGuide() {
     <section class="guide-sec">
       <h3 class="guide-h">How to use this</h3>
       <ul class="guide-list">
-        <li><b>The pages</b> — Dashboard (your at-a-glance), Calendar (researched + your events), Deadlines (act-by dates), Checklist (the yearlong plan), Explore (places &amp; tips), Rooms (share-houses), Map (everything pinned), Plan a Day (build an itinerary) — plus a JLPT grammar reference linked from Survival Japanese.</li>
+        <li><b>The pages</b> — Dashboard (your at-a-glance), Calendar (trip events + your own), Plan a Day (build an itinerary), Map (everything pinned), Explore (places &amp; tips), Eats (rate what you eat), Checklist (trip prep), Budget, and Emergency. Phrases has a survival Japanese phrasebook.</li>
         <li><b>Get around</b> — tap the nav, <b>swipe</b> left/right between pages on a phone, or press <b>1–8</b> and <b>[ ]</b> on a keyboard (<b>?</b> shows every shortcut).</li>
         <li><b>Quick actions</b> — <b>long-press</b> a calendar day, an Explore card, or a checklist item for a pop-up menu. Tap <b>★</b> on a restaurant to add it to your map (Tabetai).</li>
         <li><b>Rearrange</b> — drag the ⠿ handle to reorder lists; drag an event chip to another day to reschedule.</li>
-        <li><b>Keyboard</b> — press <b>?</b> for the full list; <b>⌘K</b> / <b>/</b> opens the command palette (it reaches the grammar pages too). In the grammar trainer, type your answer then <b>⏎</b>, grade with <b>2 / 3 / 4</b>, <b>Z</b> undoes; its foot has an <b>Auto-advance</b> switch that moves on for you after a correct answer. Turn every single-key shortcut off under <b>Keyboard shortcuts</b> below.</li>
+        <li><b>Keyboard</b> — press <b>?</b> for the full list; <b>⌘K</b> / <b>/</b> opens the command palette. Turn every single-key shortcut off under <b>Keyboard shortcuts</b> below.</li>
         <li><b>Your data</b> — everything saves on <i>this device only</i>. Use <b>⬇ Back up my data</b> (bottom of the page) before switching phones.</li>
         <li><b>Languages</b> — the <b>あ</b> button toggles a Japanese chrome + hover-dictionary; <b>🌙</b> switches dark mode.</li>
         <li><b>Anki sync</b> — works when you run this dashboard locally (http://localhost) with Anki + the AnkiConnect add-on open, and add that origin to AnkiConnect's webCorsOriginList (per-origin, all-or-nothing — only add origins you trust). On the live site, Export/Import fall back to a file.</li>

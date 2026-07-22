@@ -1,7 +1,7 @@
 {
-  "name": "My Year in Japan",
-  "short_name": "Japan Year",
-  "description": "A personal trip dashboard for a working-holiday year in Tokyo.",
+  "name": "My Japan Trip",
+  "short_name": "Japan Trip",
+  "description": "A personal trip dashboard for a Tokyo tourist trip, autumn 2026.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

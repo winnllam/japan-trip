@@ -531,11 +531,16 @@ test('tagHue: deterministic, in range, stable across calls', () => {
   assert.ok(Number.isInteger(h) && h >= 0 && h < 360);
 });
 
-test('seed ids all exist in tips.json checklist', () => {
+test('tips.json checklist ids are present and unique', () => {
   const data = JSON.parse(readFileSync(new URL('../docs/data/tips.json', import.meta.url)));
-  const ids = new Set(data.checklist.flatMap(p => (p.items || []).map(i => i.id)));
-  const SEED = ['chk-confirm-whv-eligibility-age-1', 'chk-gather-visa-documents-passpor', 'chk-show-proof-of-funds-in-your-ac', 'chk-book-consulate-appointment-and', 'chk-check-passport-validity-blan', 'chk-lock-the-proof-of-funds-figure-2', 'chk-book-first-week-accommodation-2', 'chk-adhd-ncd-permit'];
-  SEED.forEach(id => assert.ok(ids.has(id), `seed id missing: ${id}`));
+  const ids = data.checklist.flatMap(p => (p.items || []).map(i => i.id));
+  assert.ok(ids.length > 0, 'checklist has items');
+  ids.forEach(id => assert.ok(typeof id === 'string' && id.length, `checklist item missing id: ${id}`));
+  assert.equal(ids.length, new Set(ids).size, 'checklist ids are unique');
+  // any requires[] prereq must reference a real checklist id (dependency-lock integrity)
+  const idSet = new Set(ids);
+  data.checklist.flatMap(p => p.items || []).forEach(it =>
+    (it.requires || []).forEach(r => assert.ok(idSet.has(r), `requires points at missing id: ${r}`)));
 });
 
 import { eventToGcal, nextDayISO, getMapped, setMapped, forgetCalendar } from '../docs/assets/lib/gcal.js';

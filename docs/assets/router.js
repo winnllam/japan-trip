@@ -7,11 +7,11 @@ import { transitionView } from './motion.js';
 
 // deadlines/packing/phrases retired from the nav post-arrival (their views + data remain for the
 // dashboard/notifications; re-add here + in index.html to restore).
-export const ROUTES = ['dashboard', 'calendar', 'plan', 'map', 'explore', 'eats', 'people', 'checklist', 'budget', 'rooms', 'emergency'];
+export const ROUTES = ['dashboard', 'calendar', 'plan', 'map', 'explore', 'eats', 'checklist', 'budget', 'emergency'];
 
 // retired from the nav but still deep-linkable — dashboard teasers/notifications link here
 // (#/deadlines, #/packing) and the views stay mounted; they're just not in the swipe/nav order.
-const HIDDEN = ['deadlines', 'packing', 'phrases', 'grammar', 'survival', 'study'];
+const HIDDEN = ['deadlines', 'packing'];
 
 // legacy section id → route (for intercepting old in-app anchor links)
 const LEGACY = {
@@ -22,7 +22,7 @@ const LEGACY = {
   controls: 'explore', brew: 'explore', activities: 'explore', restaurants: 'explore',
   disney: 'explore', building: 'explore', music: 'explore', geek: 'explore',
   meetups: 'explore', homeSection: 'explore', sourcesSection: 'explore',
-  livemusic: 'explore', rooms: 'rooms', map: 'map', plan: 'plan',
+  livemusic: 'explore', rooms: 'dashboard', people: 'dashboard', map: 'map', plan: 'plan',
 };
 
 // pure: parse a hash string into a route (exported for unit testing)
@@ -49,7 +49,7 @@ const TITLES = {
   budget: 'Budget', explore: 'Explore', eats: 'Eats', rooms: 'Rooms', map: 'Map', plan: 'Plan a Day', emergency: 'Emergency',
   deadlines: 'Deadlines', packing: 'Packing', phrases: 'Phrases', grammar: 'Grammar', survival: 'Useful phrases', study: 'The Grammar Almanac',
 };
-const SITE = 'My Year in Japan';
+const SITE = 'My Japan Trip';
 
 // route → human label (for the command palette). TITLES stays module-local.
 export function routeLabel(route) { return TITLES[route] || route; }

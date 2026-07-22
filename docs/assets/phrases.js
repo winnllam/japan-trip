@@ -157,7 +157,7 @@ async function doExport() {
   const favScope = $('#jtFavScope')?.checked;
   const rows = exportRows(favScope);
   if (!rows.length) { alertModal('No phrases to export.'); return; }
-  const deck = getRaw(KEYS.ankiDeck, 'Japan WHV');
+  const deck = getRaw(KEYS.ankiDeck, 'Japan Trip');
   if (await isAvailable()) {
     try {
       await invoke('createDeck', { deck });

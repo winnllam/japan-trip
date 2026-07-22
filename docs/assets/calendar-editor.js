@@ -134,7 +134,7 @@ export function openExport() {
     const sel = new Set(picked());
     const evs = allEvents().filter(e => sel.has(catOf(e)));
     if (!evs.length) { alertModal('Pick at least one tag.'); return; }
-    download(`my-year-in-japan-${[...sel].join('-')}.ics`, toICS(evs, 'My Year in Japan'));
+    download(`my-japan-trip-${[...sel].join('-')}.ics`, toICS(evs, 'My Japan Trip'));
     closeModal(ov);
   });
 }

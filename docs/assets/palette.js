@@ -14,7 +14,7 @@ import { esc } from './lib/dom.js';
 const KIND_ICON = { route: '➜', content: '◦' };
 // K5: the two research-blessed HIDDEN routes the palette also reaches (they're excluded from the
 // nav-ordered ROUTES, so they'd otherwise be unreachable here). Both are deep-linkable + parseRoute-known.
-const HIDDEN_REACHABLE = ['study', 'grammar'];
+const HIDDEN_REACHABLE = [];
 
 let BAKED = [];          // static baked half, built once at mount
 let INDEX = [];          // BAKED + user content, rebuilt fresh each open

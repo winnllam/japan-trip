@@ -39,7 +39,7 @@ function gmaps(query) { return 'https://www.google.com/maps/search/?api=1&query=
 function dedupe(arr) { const seen = new Set(); return arr.filter(p => { const k = (p.name || '').toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; }); }
 function isSoon(d) { if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return false; const diff = (Date.parse(d) - Date.now()) / 86400000; return diff >= -1 && diff <= 45; }
 const todayISO = () => nowISO();   // local date, consistent with the rest of the app (not UTC)
-const ARRIVAL = '2026-06-30';      // land NRT — before this, device location is wrong, so route from home
+const ARRIVAL = '2026-10-19';      // land HND — before this, device location is wrong, so route from home
 
 // the single home base (or null). Lookup is just a flag on a user place (spec §1a).
 function homeBase() { return loadPlaces().find(p => p.home) || null; }
