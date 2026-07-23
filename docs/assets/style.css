@@ -1812,6 +1812,9 @@ button.mrd-stop:hover .mrd-go{ opacity:1; }
 .dur-btn{ width:24px; height:24px; border:1px solid var(--line); background: var(--bg-elevated); color: var(--ink); border-radius: var(--r-sm); cursor:pointer; font-weight:700; }
 .dur-val{ min-width:48px; text-align:center; }
 .stop-end{ color: var(--ink-soft); }
+.stop-cal{ font-family: var(--mono); font-weight:700; font-size:.68rem; border:1px solid var(--line); background: var(--bg-soft); color: var(--ink-soft); border-radius: var(--r-sm); padding:.2rem .5rem; cursor:pointer; }
+.stop-cal:hover{ border-color: var(--indigo); color: var(--indigo); }
+.stop-cal.on{ border-color: var(--indigo); color: var(--indigo); background: color-mix(in srgb, var(--indigo) 12%, var(--bg-soft)); }
 .stop-note{ width:100%; font-size:.78rem; border:none; border-bottom:1px solid transparent; background:none; color: var(--ink); padding:.1rem 0; text-overflow: ellipsis; }   /* stage 6: hard mid-word clip → ellipsis (full text on hover via title) */
 .stop-note:focus{ outline:none; border-bottom-color: var(--indigo); }
 .stop-rail{ display:flex; flex-direction:column; align-items:center; gap:.15rem; }   /* stage 6: ▲▼ and ✕ were two ragged columns */
@@ -3679,6 +3682,10 @@ ruby > rt {
 .wk2-ev:hover{ background: color-mix(in srgb, var(--cat) 26%, var(--bg-soft)); box-shadow: var(--shadow); z-index:2; }
 .wk2-etime{ font-family: var(--mono); font-size:.58rem; color: color-mix(in srgb, var(--cat), var(--ink) 55%); white-space:nowrap; }
 .wk2-et{ font-size:.72rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* day-plan stops rendered on the time grid — a dashed, indigo-tinted look distinct from events */
+.wk2-planblock{ border-left:3px dashed var(--indigo); background: color-mix(in srgb, var(--indigo) 11%, var(--bg-soft)); }
+.wk2-planblock:hover{ background: color-mix(in srgb, var(--indigo) 20%, var(--bg-soft)); }
+.wk2-planblock .wk2-etime{ color: var(--indigo); }
 .wk2-now{ position:absolute; left:0; right:0; height:2px; background: var(--red); z-index:3; pointer-events:none; }
 .wk2-now-dot{ position:absolute; left:-4px; top:-3px; width:8px; height:8px; border-radius:50%; background: var(--red); }
 @media (max-width: 700px){ .wk2{ display:none; } }   /* mobile keeps the .wk-list view (rendered by weekListHTML) */

@@ -3,6 +3,8 @@ import { $, $$, esc, stripEmoji } from './lib/dom.js';
 import { parseISO, MONTHS, fmtShort } from './lib/dates.js';
 import { weekDays, isMultiDay, packLanes, parseHM, layoutDay } from './lib/weekgrid.js';
 import { recurOccurrences, isRecurring } from './lib/recur.js';
+import { getPlan } from './lib/dayplan.js';
+import { ensureRoute } from './lazyroutes.js';
 import { makeMovable } from './dnd.js';
 import { weekAnchor, TODAY, allEvents, visible, safeCat, isEvergreen, openModal, openSidePanel, rescheduleEvent, saveUser, loadUser } from './calendar.js';
 
@@ -71,6 +73,19 @@ function gridHTML(days, isDay) {
       else bandCols[i].push(e);
     }
   });
+  // Day-plan stops with a start time render as timed blocks too (live from getPlan). A stop that's
+  // been promoted to a calendar event (evstop-DATE-ID via Plan a Day) is skipped here so it shows
+  // once — as its event — never doubled.
+  const promoted = new Set(evs.map(e => e.id));
+  days.forEach((d, i) => {
+    (getPlan(d)?.stops || []).forEach(s => {
+      if (promoted.has(`evstop-${d}-${s.id}`)) return;
+      const startMin = parseHM(s.startTime); if (startMin == null) return;   // only timed stops land on the grid
+      const endMin = Math.min(24 * 60, startMin + (s.durationMin || 60));
+      const eh = `${String(Math.floor(endMin / 60) % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+      timedCols[i].push({ id: `planstop-${d}-${s.id}`, plan: true, planday: d, startMin, endMin, ev: { title: s.name, time: s.startTime, endTime: eh, category: 'personal' } });
+    });
+  });
   const chips = bandCols.map(c => `<div class="wk-chipcol">${c.map(chipHTML).join('')}</div>`).join('');
   const anyTimed = timedCols.some(c => c.length);   // a fully all-day week → the hour grid would be an empty void; show a hint instead
 
@@ -86,8 +101,13 @@ function gridHTML(days, isDay) {
       const h = Math.max(20, Math.round((b.endMin - b.startMin) / 60 * WK_HH));
       const w = 100 / b.cols, left = b.col * w;
       const tm = b.ev.time + (b.ev.endTime ? '–' + b.ev.endTime : '');
+      const pos = `top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px)`;
+      if (b.plan) {   // a day-plan stop — opens Plan a Day, not the event editor
+        return `<button type="button" class="wk2-ev wk2-planblock" data-planday="${esc(b.planday)}" style="${pos}" aria-label="Day plan — ${esc(b.ev.title)} at ${esc(b.ev.time)}">`
+          + `<span class="wk2-etime" aria-hidden="true">${esc(tm)}</span><span class="wk2-et" aria-hidden="true">📋 ${esc(stripEmoji(b.ev.title))}</span></button>`;
+      }
       const aria = `${b.ev.time}${b.ev.endTime ? ' to ' + b.ev.endTime : ''}, ${b.ev.title}`;
-      return `<button type="button" class="wk2-ev" data-id="${esc(b.id)}" data-ev="${esc(b.id)}" style="top:${top}px;height:${h}px;left:calc(${left}% + 2px);width:calc(${w}% - 4px);--cat:var(--c-${safeCat(b.ev)}-ink)" aria-label="${esc(aria)}">`
+      return `<button type="button" class="wk2-ev" data-id="${esc(b.id)}" data-ev="${esc(b.id)}" style="${pos};--cat:var(--c-${safeCat(b.ev)}-ink)" aria-label="${esc(aria)}">`
         + `<span class="wk2-etime" aria-hidden="true">${esc(tm)}</span><span class="wk2-et" aria-hidden="true">${esc(stripEmoji(b.ev.title))}</span></button>`;
     }).join('');
     const now = d === TODAY ? `<div class="wk2-now" style="top:${Math.round(nowMin / 60 * WK_HH)}px"><span class="wk2-now-dot"></span></div>` : '';
@@ -136,8 +156,16 @@ function chipHTML(e) {
   const rec = isRecurring(e);
   return `<button type="button" class="wk-chip${rec ? ' recurring' : ''}" data-id="${esc(e.id)}" data-ev="${esc(e.id)}" style="--cat:var(--c-${safeCat(e)}-ink)" title="${esc(e.title)}${rec ? ' (repeats ' + esc(e.recur) + ')' : ''}"><span class="wk-dot" aria-hidden="true"></span><span class="wk-bt">${esc(stripEmoji(e.title))}</span>${rec ? '<span class="cc-recur" aria-hidden="true">↻</span>' : ''}</button>`;
 }
+// a 📋 plan block → jump to Plan a Day for that date (plan is a lazy route; mount then select).
+function openDayPlan(date) {
+  if (!date) return;
+  if (location.hash !== '#/plan') location.hash = '#/plan';
+  ensureRoute('plan').then(() => requestAnimationFrame(() => document.dispatchEvent(new CustomEvent('jwh:plan-goto', { detail: { date } }))));
+}
+
 export function wireWeek() {
   const view = $('#calView'); if (!view) return;
+  $$('#calView .wk2-planblock[data-planday]').forEach(el => el.addEventListener('click', (e) => { e.stopPropagation(); openDayPlan(el.dataset.planday); }));
   $$('#calView .wk-add, #calView .wk2-add').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); openModal(null, b.dataset.day); }));   // per-day add (mobile list ＋ and desktop day-header ＋) — keyboard-reachable
   wireWeekDragCreate();
   wireWeekResize();

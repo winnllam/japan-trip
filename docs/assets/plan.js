@@ -254,6 +254,9 @@ function stopRow(s, i, stops) {
             <button type="button" class="dur-btn" data-edit="dur+" data-id="${esc(s.id)}" aria-label="More time">＋</button>
           </span>
           ${end ? `<span class="stop-end">→ ${esc(end)}</span>` : ''}
+          ${(get(KEYS.events, []) || []).some(e => e.id === `evstop-${activeDate}-${s.id}`)
+            ? `<button type="button" class="stop-cal on" data-edit="stopcal" data-id="${esc(s.id)}" title="On the Month calendar — click to remove">✓ 📅 On calendar</button>`
+            : `<button type="button" class="stop-cal" data-edit="stopcal" data-id="${esc(s.id)}" title="Add this stop to the calendar (shows in Month view)">＋ 📅 Calendar</button>`}
         </div>
         <input type="text" class="stop-note" value="${esc(s.note || '')}" title="${esc(s.note || '')}" data-edit="note" data-id="${esc(s.id)}" placeholder="note…" aria-label="Note for ${esc(s.name)}">
       </div>
@@ -296,6 +299,26 @@ function onBodyClick(e) {
   }
   if (edit === 'up' || edit === 'down') return moveStop(id, edit);
   if (edit === 'dur-' || edit === 'dur+') return bumpDuration(id, edit === 'dur+' ? 15 : -15);
+  if (edit === 'stopcal') return toggleStopCal(id);
+}
+
+// Per-stop "add to calendar": create/remove a user calendar event for one stop (id
+// evstop-DATE-ID), so it shows in Month view. The Week/Day grids render plan stops already and
+// skip a promoted stop, so it never doubles there. One dispatch re-renders plan + calendar.
+function toggleStopCal(id) {
+  const s = getPlan(activeDate)?.stops?.find(x => x.id === id); if (!s) return;
+  const evId = `evstop-${activeDate}-${id}`;
+  const evs = get(KEYS.events, []) || [];
+  if (evs.some(e => e.id === evId)) {
+    set(KEYS.events, evs.filter(e => e.id !== evId));
+    announce('Removed from calendar');
+  } else {
+    const end = s.startTime ? endTime(s.startTime, s.durationMin).replace(/ \+1$/, '') : '';
+    evs.push({ id: evId, title: s.name, date: activeDate, endDate: '', time: s.startTime || '', endTime: end, category: 'personal', area: s.area || '', note: s.note || '', fromStop: `${activeDate}:${id}` });
+    set(KEYS.events, evs);
+    announce('Added to calendar');
+  }
+  document.dispatchEvent(new CustomEvent('jwh:data-changed'));
 }
 // note + time use change events (delegated)
 function onBodyChange(e) {
