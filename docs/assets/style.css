@@ -3255,6 +3255,8 @@ html[data-reduce-motion="on"] .lc-search-wrap { transition: none; }
 .cal-more:focus-visible{ outline: 2px solid var(--indigo); outline-offset: 1px; border-radius: var(--r-xs); }
 /* a quiet dot after the date number marks a day that holds a booking deadline */
 .bk-dot{ width: 5px; height: 5px; border-radius: 50%; background: var(--red); display: inline-block; margin-left: 4px; vertical-align: middle; flex: 0 0 auto; }
+.plan-dot{ border: none; background: transparent; padding: 0; margin-left: 4px; font-size: .72rem; line-height: 1; cursor: pointer; opacity: .75; flex: 0 0 auto; }
+.plan-dot:hover, .plan-dot:focus-visible{ opacity: 1; transform: scale(1.15); }
 
 /* mobile: keep single chip visible, compact */
 @media (max-width: 560px){

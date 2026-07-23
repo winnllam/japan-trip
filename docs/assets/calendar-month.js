@@ -4,6 +4,8 @@ import { daysBetween, fmtShort, parseISO } from './lib/dates.js';
 import { isMultiDay, fmt12 } from './lib/weekgrid.js';
 import { recurOccurrences, isRecurring } from './lib/recur.js';
 import { monthGrid } from './lib/minical.js';
+import { getPlan } from './lib/dayplan.js';
+import { ensureRoute } from './lazyroutes.js';
 import { makeMovable } from './dnd.js';
 import { viewY, viewM, TODAY, allEvents, visible, catOf, safeCat, tasksOn, taskChipHTML, allTasks, isEvergreen, openModal, openSidePanel, dayPopover, gotoTask, birthdaysOn, birthdayChipHTML, gotoPerson, rescheduleEvent, goAgenda, goWeek } from './calendar.js';
 
@@ -159,13 +161,15 @@ export function monthHTML() {
       const moreN = items.length - shown;
       const more = moreN > 0 ? `<button type="button" class="cal-more" data-day="${esc(date)}">+${moreN} more</button>` : '';
       const bk = singles.some(e => e.bookBy) ? `<span class="bk-dot" role="img" aria-label="has a booking deadline" title="has a booking deadline"></span>` : '';
+      const planN = (getPlan(date)?.stops || []).length;
+      const planMark = planN ? `<button type="button" class="plan-dot" data-planday="${esc(date)}" title="${planN}-stop day plan — open" aria-label="Open the day plan for ${esc(date)}, ${planN} stop${planN === 1 ? '' : 's'}">📋</button>` : '';
       const nEv = singles.length + bars.filter(b => b.startCol <= c && b.endCol >= c).length;
       const aria = `${esc(date)}, ${nEv} event${nEv === 1 ? '' : 's'}${tks.length ? `, ${tks.length} task${tks.length === 1 ? '' : 's'}` : ''}`;
       const dayN = date.slice(8, 10).replace(/^0/, '');
       const label = date.slice(8, 10) === '01' ? `${esc(MONTHS_LONG[+date.slice(5, 7) - 1])} ${dayN}` : dayN;
       const cls = ['cal-cell', isToday && 'today', past && 'past', weekend && 'weekend'].filter(Boolean).join(' ');
       cellsHTML += `<div class="${cls}" data-day="${esc(date)}">
-        <span class="cal-row"><button type="button" class="cal-date" data-day="${esc(date)}" aria-label="${aria}">${label}</button>${bk}</span>
+        <span class="cal-row"><button type="button" class="cal-date" data-day="${esc(date)}" aria-label="${aria}">${label}</button>${bk}${planMark}</span>
         <div class="cal-cbody">${chips}${more}</div></div>`;
     }
     out += `<div class="cal-week" style="--barrows:${barRows}">${barsHTML ? `<div class="cal-bars">${barsHTML}</div>` : ''}<div class="cal-weekgrid">${cellsHTML}</div></div>`;
@@ -319,12 +323,22 @@ export function wirePanel() {
 }
 
 // ---- day popover ----
+// 📋 day-plan marker → jump to Plan a Day for that date (plan is a lazy route; mount it first,
+// then fire jwh:plan-goto which plan.js listens for to select + centre the date).
+function openDayPlan(date) {
+  if (!date) return;
+  if (location.hash !== '#/plan') location.hash = '#/plan';
+  ensureRoute('plan').then(() => requestAnimationFrame(() => document.dispatchEvent(new CustomEvent('jwh:plan-goto', { detail: { date } }))));
+}
+
 export function wireCells() {
   $$('#calView .cal-cell[data-day]').forEach(c => {
     // the .cal-date button is the keyboard-focusable trigger; its click bubbles here. A chip click
     // opens the event; on a day WITH items, a bare click peeks the day popover; on an EMPTY day it
     // goes straight to the new-event editor (Notion-style — no empty popover in the way).
     c.addEventListener('click', (e) => {
+      const pd = e.target.closest('.plan-dot');
+      if (pd) { e.stopPropagation(); openDayPlan(pd.dataset.planday); return; }   // 📋 marker → open that day's plan
       if (_calDragSelected) { _calDragSelected = false; return; }              // a range-drag just ended — don't also add/peek
       if (_plainClickDone) { _plainClickDone = false; return; }               // finish() already handled this click (pointer-capture fallback browsers)
       // date number or "+N more" → zoom into that WEEK — POINTER only (e.detail 0 = keyboard
