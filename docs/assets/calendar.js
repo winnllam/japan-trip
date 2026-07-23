@@ -55,7 +55,7 @@ let _sidePanelTrigger = null;     // element that opened the panel (focus restor
 let _sidePanelCleanup = null;     // remove side-panel document listeners
 let _legendTimer = null;          // discriminate legend single-click (toggle) from double-click (isolate)
 
-export const CATS = ['festival', 'fireworks', 'illumination', 'convention', 'seasonal', 'nature', 'holiday', 'food', 'disney', 'music', 'personal', 'birthday', 'imported'];
+export const CATS = ['festival', 'fireworks', 'illumination', 'convention', 'seasonal', 'nature', 'holiday', 'food', 'park', 'music', 'personal', 'trip', 'imported'];
 export const SPAN_CAP = 10;
 // an "evergreen" event is a season-long span (start→end beyond SPAN_CAP): the ongoing/permanent
 // layer (teamLab, club residencies, beer gardens). These belong in the month view's "Ongoing this
@@ -64,6 +64,17 @@ export function isEvergreen(e) { const en = (e.endDate || '').slice(0, 10); if (
 
 export function loadUser() { return get(KEYS.events, []) || []; }
 export function saveUser(a) { set(KEYS.events, a); changed(); }
+// One-time: the 'disney' event category was renamed to 'park'. Rewrite any stored event still on
+// the old category so it keeps a colour + shows under the right filter. Runs once (flag-guarded),
+// writes silently (no changed() dispatch — mount hasn't rendered yet).
+function migrateEventCats() {
+  if (getRaw(KEYS.catMigrateV1) === '1') return;
+  const evs = get(KEYS.events, []) || [];
+  let touched = false;
+  const next = evs.map(e => (e && e.category === 'disney') ? (touched = true, { ...e, category: 'park' }) : e);
+  if (touched) set(KEYS.events, next);
+  setRaw(KEYS.catMigrateV1, '1');
+}
 export function goAgenda() { mode = 'agenda'; render(); }
 function changed() { document.dispatchEvent(new CustomEvent('jwh:data-changed')); }
 
@@ -104,18 +115,19 @@ export function allEvents() {
 document.addEventListener('jwh:data-changed', () => { _evCache = null; _taskCache = null; });
 
 // ---- checklist tasks as a display-only calendar layer ----
-// Only OPEN tasks with a USER-SET due date appear (KEYS.due) — never the baked `dueBy` estimates,
-// mirroring the notifications rule (curated dates only, no flood). Tasks are NOT real events: they
-// carry data-task (not data-ev) so drag/reschedule/export ignore them; clicking jumps to the
-// checklist. Memoized per render; invalidated alongside _evCache on any data change.
+// Every OPEN checklist item with a due date appears — the date you set (KEYS.due, via the 📅) OR
+// the built-in `dueBy` estimate. checklistItems() already resolves effectiveDue = your date ?? the
+// baked estimate. (The notifications bell still fires on curated deadlines + dates you set only —
+// this display layer is broader on purpose, since a short trip has few baked dates, not a flood.)
+// Tasks are NOT real events: they carry data-task (not data-ev) so drag/reschedule/export ignore
+// them; clicking jumps to the checklist. Memoized per render; invalidated with _evCache.
 export function allTasks() {
   if (_taskCache) return _taskCache;
   if (!showTasks) return (_taskCache = []);
-  const due = get(KEYS.due, {}) || {};
   const done = get(KEYS.checklist, {}) || {};
   _taskCache = checklistItems(DATA)
-    .filter(it => due[it.id] && !done[it.id] && parseISO(due[it.id]))
-    .map(it => ({ taskId: it.id, title: it.task, date: due[it.id] }));
+    .filter(it => it.effectiveDue && !done[it.id] && parseISO(it.effectiveDue))
+    .map(it => ({ taskId: it.id, title: it.task, date: it.effectiveDue }));
   return _taskCache;
 }
 export function tasksOn(iso) { return showTasks ? allTasks().filter(t => t.date.slice(0, 10) === iso) : []; }
@@ -200,9 +212,10 @@ export function mountCalendar(data, today) {
   if (_calMounted) return; _calMounted = true;   // mount-once: document/window listeners below must not double-register
   DATA = data;
   TODAY = today || nowISO();
+  migrateEventCats();   // disney → park (once), before any events are read/rendered
   const cf = get(KEYS.calFilters, []); hiddenCats = new Set(Array.isArray(cf) ? cf : []);   // guard a corrupted (non-array) stored value
   showTasks = getRaw(KEYS.calShowTasks, '') !== 'off';  // on by default; the ☑ Tasks toggle persists your choice
-  const src = get(KEYS.calSources, {}) || {}; showUser = src.showUser !== false; showBaked = src.showBaked !== false;   // both on by default
+  showUser = showBaked = true;   // the My-events/Researched source split was retired (all events are user events now) — visible() keeps both on
   const sb = getRaw(KEYS.calSidebar, '');
   sideCollapsed = sb === 'collapsed' ? true : sb === 'expanded' ? false : window.matchMedia('(max-width: 820px)').matches;   // sidebar visibility persists; no stored pref → collapsed on mobile
   const t = parseISO(TODAY);
@@ -362,21 +375,22 @@ export function goToDate(iso) {
   viewY = t.getUTCFullYear(); viewM = t.getUTCMonth(); mode = 'month'; render();
 }
 
-// ---- the "Calendars" sidebar list: YOUR calendars (My events · 🎂 Birthdays · Tasks) up top, the
-// researched category filters tucked into a collapsible "Researched" group below (owner hardly uses
-// them). Category toggles still drive hiddenCats; Birthdays is the 'birthday' category. ----
+// ---- the "Calendars" sidebar list: the ☑ Tasks toggle + any custom calendars up top, then a
+// collapsible "Filter by type" group of category toggles (nature/holiday/…) that filter your
+// events. The old My-events/Researched source split was retired — every event is a user event
+// now, so those two source toggles were removed. Category toggles drive hiddenCats. ----
 function buildCalendars() {
   const el = $('#calCalendars');
   if (!el) return;
-  const resOpen = getRaw(KEYS.calResOpen, '') === 'open';
+  const resOpen = getRaw(KEYS.calResOpen, 'open') !== 'closed';   // type filters default open (they filter your own events now)
   // allCats drives the aggregate ops (isolate / Hide all) — always includes 'birthday' (a togglable
   // calendar even though it's a People-derived layer, not in allEvents()). present is the RENDER list
   // for the Researched group only (birthday shows under Your calendars, so it's excluded there).
   const cals = customCals();
-  // allCats drives the aggregate ops: everything toggleable, incl. 'birthday' and every custom
-  // calendar (togglable even with no events yet, so not always in allEvents()).
-  const allCats = [...new Set([...allEvents().map(catOf), 'birthday', ...cals.map(c => c.id)])].sort();
-  const present = allCats.filter(c => c !== 'birthday' && !cals.some(x => x.id === c));   // Researched render list: researched categories only
+  // allCats drives the aggregate ops: every category present + every custom calendar (togglable
+  // even with no events yet, so not always in allEvents()).
+  const allCats = [...new Set([...allEvents().map(catOf), ...cals.map(c => c.id)])].sort();
+  const present = allCats.filter(c => !cals.some(x => x.id === c));   // Researched render list: researched categories only
   // btnCls (e.g. cat-festival) goes on the row so the category :is() rule sets --chip-cat, which the
   // child swatch inherits; swCls (sw-user/sw-baked/sw-task) colours the source/task swatches directly.
   const row = (attrs, btnCls, swCls, name, on) =>
@@ -387,17 +401,15 @@ function buildCalendars() {
     + `<button type="button" class="cal-edit" data-editcal="${esc(c.id)}" aria-label="Edit ${esc(c.name)}">✎</button></div>`;
   el.innerHTML =
     `<div class="cal-cals-head"><span>Calendars</span><button class="cal-cals-all" id="calAll" type="button">${hiddenCats.size ? 'Show all' : 'Hide all'}</button></div>`
-    + `<div class="cal-grp-lab">Your calendars</div>`
-    + row('id="calSrcUser"', '', 'sw-user', 'My events', showUser)
-    + row(`data-cat="birthday" title="Birthdays from your People page · click to toggle"`, 'cat-birthday', '', '🎂 Birthdays', !hiddenCats.has('birthday'))
     + row('id="lgTasks"', '', 'sw-task', '☑ Tasks', showTasks)
     + cals.map(calRow).join('')
     + `<button type="button" class="cal-newcal" id="calNew">＋ New calendar</button>`
-    + `<button class="cal-grp-head" id="calResHead" type="button" aria-expanded="${resOpen}" aria-controls="calResBody"><span class="cal-grp-chev" aria-hidden="true">${resOpen ? '▾' : '▸'}</span>Researched</button>`
-    + `<div class="cal-grp-body" id="calResBody"${resOpen ? '' : ' hidden'}>`
-    + row('id="calSrcBaked"', '', 'sw-baked', 'All researched', showBaked)
-    + present.map(c => row(`data-cat="${esc(c)}" title="Click to toggle · double-click or Shift+Enter to show only ${esc(c)}"`, `cat-${esc(c)}`, '', esc(c), !hiddenCats.has(c))).join('')
-    + `</div>`;
+    + (present.length
+        ? `<button class="cal-grp-head" id="calResHead" type="button" aria-expanded="${resOpen}" aria-controls="calResBody"><span class="cal-grp-chev" aria-hidden="true">${resOpen ? '▾' : '▸'}</span>Filter by type</button>`
+          + `<div class="cal-grp-body" id="calResBody"${resOpen ? '' : ' hidden'}>`
+          + present.map(c => row(`data-cat="${esc(c)}" title="Click to toggle · double-click or Shift+Enter to show only ${esc(c)}"`, `cat-${esc(c)}`, '', esc(c), !hiddenCats.has(c))).join('')
+          + `</div>`
+        : '');
 
   const focusRow = (sel) => $(sel)?.focus({ preventScroll: true });   // restore keyboard focus across the rebuild
   const catSel = (c) => `#calCalendars .calrow[data-cat="${window.CSS ? CSS.escape(c) : c}"]`;
@@ -426,9 +438,7 @@ function buildCalendars() {
     });
     b.addEventListener('dblclick', () => isolate(b.dataset.cat));
   });
-  $('#calResHead')?.addEventListener('click', () => { setRaw(KEYS.calResOpen, resOpen ? '' : 'open'); buildCalendars(); focusRow('#calResHead'); });   // collapse/expand the Researched group (no re-render — visibility unchanged)
-  $('#calSrcUser')?.addEventListener('click', () => { showUser = !showUser; persistSources(); buildCalendars(); render(); focusRow('#calSrcUser'); });
-  $('#calSrcBaked')?.addEventListener('click', () => { showBaked = !showBaked; persistSources(); buildCalendars(); render(); focusRow('#calSrcBaked'); });
+  $('#calResHead')?.addEventListener('click', () => { setRaw(KEYS.calResOpen, resOpen ? 'closed' : 'open'); buildCalendars(); focusRow('#calResHead'); });   // collapse/expand the type-filter group (no re-render — visibility unchanged)
   $('#lgTasks')?.addEventListener('click', () => {
     showTasks = !showTasks; setRaw(KEYS.calShowTasks, showTasks ? 'on' : 'off'); _taskCache = null;
     buildCalendars(); render(); focusRow('#lgTasks');
@@ -463,7 +473,6 @@ function buildCalendars() {
   }));
 }
 function persistFilters() { set(KEYS.calFilters, [...hiddenCats]); }
-function persistSources() { set(KEYS.calSources, { showUser, showBaked }); }
 
 // ---- Notion-style keyboard shortcuts (active only on #/calendar) ----
 // remove the focused/open event: user events delete; baked events hide (researched

@@ -42,7 +42,9 @@
   --c-nature:#3d7434;       --c-nature-ink:#3d7434;
   --c-holiday:#bc002d;      --c-holiday-ink:#bc002d;
   --c-food:#a85716;         --c-food-ink:#a85716;
-  --c-disney:#a8228d;       --c-disney-ink:#a8228d;
+  --c-disney:#a8228d;       --c-disney-ink:#a8228d;   /* legacy alias — kept so any un-migrated event still colours */
+  --c-park:#a8228d;         --c-park-ink:#a8228d;     /* theme parks (renamed from disney) */
+  --c-trip:#0e7c86;         --c-trip-ink:#0e7c86;     /* travel / trip days */
   --c-music:#5a3fb5;        --c-music-ink:#5a3fb5;
   --c-personal:#3a5ba0;     --c-personal-ink:#3a5ba0;
   --c-imported:#6b6b6b;     --c-imported-ink:#6b6b6b;
@@ -126,6 +128,7 @@
   --c-festival-ink:#f08aa6; --c-fireworks-ink:#b598f0; --c-illumination-ink:#6fb4e8;
   --c-convention-ink:#5cc678; --c-seasonal-ink:#e0b34a; --c-nature-ink:#74c267;
   --c-holiday-ink:#ff6b81; --c-food-ink:#e09a55; --c-disney-ink:#e985cf;
+  --c-park-ink:#e985cf; --c-trip-ink:#3fc5d0;
   --c-music-ink:#b3a0f0; --c-personal-ink:#8fb0ff; --c-imported-ink:#a5a5a5;
   --c-birthday-ink:#ff8fbf;
   --shadow-xs:0 1px 2px rgba(0,0,0,.3);
@@ -767,6 +770,7 @@ html[data-reduce-motion="on"] .acc-chevron { transition: none; }   /* honor the 
 .cat-seasonal{ background: var(--c-seasonal);} .cat-nature{ background: var(--c-nature);}
 .cat-holiday{ background: var(--c-holiday);} .cat-food{ background: var(--c-food);}
 .cat-disney{ background: var(--c-disney);} .cat-music{ background: var(--c-music);}
+.cat-park{ background: var(--c-park);} .cat-trip{ background: var(--c-trip);}
 .cat-personal{ background: var(--c-personal);} .cat-imported{ background: var(--c-imported);}
 
 /* agenda */
@@ -3225,6 +3229,8 @@ html[data-reduce-motion="on"] .lc-search-wrap { transition: none; }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-holiday    { --chip-cat: var(--c-holiday); }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-food       { --chip-cat: var(--c-food); }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-disney     { --chip-cat: var(--c-disney); }
+:is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-park       { --chip-cat: var(--c-park); }
+:is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-trip       { --chip-cat: var(--c-trip); }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-music      { --chip-cat: var(--c-music); }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-personal   { --chip-cat: var(--c-personal); }
 :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-imported   { --chip-cat: var(--c-imported); }
@@ -3240,6 +3246,8 @@ html[data-reduce-motion="on"] .lc-search-wrap { transition: none; }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-holiday    { --chip-cat: var(--c-holiday-ink); }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-food       { --chip-cat: var(--c-food-ink); }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-disney     { --chip-cat: var(--c-disney-ink); }
+[data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-park       { --chip-cat: var(--c-park-ink); }
+[data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-trip       { --chip-cat: var(--c-trip-ink); }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-music      { --chip-cat: var(--c-music-ink); }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-personal   { --chip-cat: var(--c-personal-ink); }
 [data-theme="dark"] :is(.cal-chip,.cal-bar,.cal-opill,.calrow).cat-imported   { --chip-cat: var(--c-imported-ink); }
