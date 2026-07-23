@@ -35,6 +35,25 @@ Wrangler prints your Worker URL, e.g. `https://japan-trip-sync.<your-subdomain>.
 4. Open that link on your phone (or send it to a friend) to see the same trip. Edits from any
    device sync back to the store.
 
+## Share a read-only calendar feed
+
+To let someone add *your* calendar events to their own site/app without giving them your trip
+(the trip id allows full read + write), mint a separate calendar-only token:
+
+```bash
+# one-time, from a machine that knows your trip id:
+curl -X PUT https://<your-worker>.workers.dev/<tripId>/publish-calendar
+# → { "ok": true, "calId": "…" }
+```
+
+Then share either URL (read-only, calendar-only, CORS-open):
+
+- `https://<your-worker>.workers.dev/cal/<calId>.json` — `{ updatedAt, events: [...] }` for a website to fetch + merge
+- `https://<your-worker>.workers.dev/cal/<calId>.ics` — an iCalendar feed for Google/Apple Calendar "add from URL"
+
+The feed always reflects your current events. It never exposes the rest of your trip and can't
+write. To revoke, delete the `cal:<calId>` KV entry (`wrangler kv key delete --binding TRIPS "cal:<calId>"`).
+
 ## Notes
 
 - **Free tier** (100k requests/day, 1 GB storage) is far beyond a personal trip.
