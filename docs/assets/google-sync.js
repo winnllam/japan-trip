@@ -6,7 +6,7 @@ import { eventToGcal, getMapped, setMapped, forgetCalendar } from './lib/gcal.js
 import { confirmModal, alertModal } from './lib/modal.js';
 import { esc } from './lib/dom.js';
 
-const CLIENT_ID = '';   // ← owner: paste your Google OAuth 2.0 Web Client ID (public).
+const CLIENT_ID = '329285528782-54882nuj6p18i60kng0bultitb3pt412.apps.googleusercontent.com';   // Google OAuth 2.0 Web Client ID (public; not a secret).
                         //   Authorized JS origin = the Pages domain (+ localhost for dev).
 const SCOPE = 'https://www.googleapis.com/auth/calendar.app.created';
 const CAL_API = 'https://www.googleapis.com/calendar/v3';
