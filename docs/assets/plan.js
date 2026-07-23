@@ -57,14 +57,18 @@ export function mountPlan(data) {
   document.addEventListener('jwh:route', (e) => { const r = e.detail?.route; if (r !== 'plan' && r !== 'map') clearRoute(); });
 }
 
-// ---- day-chip rail: today→arrival+30, plus any planned dates ----
+// ---- day-chip rail: the trip window (arrival → arrival+30), plus any planned dates ----
+// Anchored to the TRIP, not "today": before the trip we start at the arrival day (so the rail shows
+// the real trip dates, not ~3 months of empty pre-trip days); once travelling it rolls from today.
+// End is arrival+30 so the whole stay (and a few buffer days) is always reachable.
 function railDates(plans) {
   const today = nowISO();
   const arrival = (DATA.meta && DATA.meta.arrival_date) || '2026-06-30';
-  const start = today < arrival ? today : arrival;
+  const from = today < arrival ? arrival : today;
+  const end = addDaysISO(arrival, 30);
   const set = new Set();
-  for (let i = 0; i <= 44; i++) set.add(addDaysISO(start, i));
-  Object.keys(plans).forEach(d => set.add(d));
+  for (let d = from, guard = 0; d <= end && guard < 400; d = addDaysISO(d, 1), guard++) set.add(d);
+  Object.keys(plans).forEach(d => set.add(d));   // keep any existing plan's date reachable
   set.add(activeDate);
   return [...set].sort();
 }
