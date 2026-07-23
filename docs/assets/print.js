@@ -12,6 +12,7 @@ import { $, esc } from './lib/dom.js';
 import { get, KEYS } from './lib/store.js';
 import { countdown, fmtShort } from './lib/dates.js';
 import { progress } from './lib/packing.js';
+import { getChecklistPhases } from './checklist-page.js';
 import { summary, fmtYen, fmtCad } from './lib/budget.js';
 
 const ARRIVAL = '2026-10-19';
@@ -30,7 +31,7 @@ export function mountPrint(data, today) {
 function nextOpenChecklist(data) {
   const checked = get(KEYS.checklist, {}) || {};
   const due = get(KEYS.due, {}) || {};
-  return (data.checklist || [])
+  return getChecklistPhases(data)
     .flatMap(p => p.items || [])
     .filter(it => it && it.id && !checked[it.id])
     .map(it => ({ ...it, _due: due[it.id] || it.dueBy || '' }))
@@ -45,7 +46,7 @@ function nextOpenChecklist(data) {
 
 function checklistProgress(data) {
   const checked = get(KEYS.checklist, {}) || {};
-  const items = (data.checklist || []).flatMap(p => p.items || []).filter(it => it && it.id);
+  const items = getChecklistPhases(data).flatMap(p => p.items || []).filter(it => it && it.id);
   const total = items.length;
   const done = items.filter(it => checked[it.id]).length;
   const pct = total ? Math.round((done / total) * 100) : 0;

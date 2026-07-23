@@ -19,6 +19,36 @@ import { shortcutsEnabled } from './lib/shortcuts.js';
 
 let DATA = null;
 
+// ---- store-backed phases -------------------------------------------------
+// The default phased items used to be read-only from tips.json. They now live in the store
+// (KEYS.checklistPhases), seeded ONCE from the tips.json defaults on first read, so every item
+// is editable/deletable through the UI and rides the cross-device sync (like the calendar +
+// tracker). `seed` (the mounted DATA, or the `data` a caller passes) is the seed source; after
+// the first write the store is the source of truth — later tips.json edits won't re-seed.
+function getPhases(seed) {
+  let p = get(KEYS.checklistPhases, null);
+  if (!Array.isArray(p) || !p.length) {
+    const src = ((seed || DATA) && (seed || DATA).checklist) || [];
+    p = src.map(ph => ({ phase: ph.phase, window: ph.window || '', items: (ph.items || []).map(it => ({ ...it })) }));
+    if (p.length) set(KEYS.checklistPhases, p);
+  }
+  return p;
+}
+function savePhases(p) { set(KEYS.checklistPhases, p); }
+// exported for print.js so a printed checklist reflects the user's store edits, not the tips.json seed
+export function getChecklistPhases(seed) { return getPhases(seed); }
+function findPhaseItem(id) {
+  for (const p of getPhases()) { const it = (p.items || []).find(x => x.id === id); if (it) return it; }
+  return null;
+}
+function renamePhaseItem(id, text) {
+  const t = String(text ?? '').trim(); if (!t) return;
+  savePhases(getPhases().map(p => ({ ...p, items: (p.items || []).map(it => it.id === id ? { ...it, task: t } : it) })));
+}
+function deletePhaseItem(id) {
+  savePhases(getPhases().map(p => ({ ...p, items: (p.items || []).filter(it => it.id !== id) })));
+}
+
 let composerDue = '';   // ISO due date chosen in the add-composer; reset after each add
 function setComposerDueLabel() {
   const b = $('#checkAddDue');
@@ -94,7 +124,7 @@ function loadChecks() { return get(KEYS.checklist, {}) || {}; }
 // Overdue pills for what's actionable. Persists to the shared collapse set; user toggles stick.
 function seedPhaseCollapseOnce() {
   if (getRaw(KEYS.checkPhaseCollapseSeed) === '1') return;
-  const phases = DATA.checklist || [];
+  const phases = getPhases();
   phases.forEach((p, pi) => setCollapsed(`chk-phase-${pi}`, true));
   setCollapsed('chk-phase-mine', true);
   setRaw(KEYS.checkPhaseCollapseSeed, '1');
@@ -108,7 +138,7 @@ function seedArrivedCollapseOnce(today) {
   if (getRaw(ARRIVED_SEED_KEY) === '1') return;
   if (countdown(DATA.meta?.arrival_date || '2026-06-30', today || nowISO()).phase !== 'arrived') return;
   const DONE = ['Done —'];   // the pre-arrival + landing archive phase
-  (DATA.checklist || []).forEach((p, pi) => {
+  getPhases().forEach((p, pi) => {
     if (DONE.some(d => (p.phase || '').startsWith(d))) setCollapsed(`chk-phase-${pi}`, true);
   });
   setRaw(ARRIVED_SEED_KEY, '1');
@@ -155,7 +185,7 @@ function saveDue(s) { set(KEYS.due, s); }
 export function checklistItems(data) {
   const due = loadDue();
   const out = [];
-  (data.checklist || []).forEach(p => (p.items || []).forEach(it => {
+  getPhases(data).forEach(p => (p.items || []).forEach(it => {
     if (!it.id) return;
     out.push({ ...it, phase: p.phase, effectiveDue: due[it.id] || it.dueBy || '' });
   }));
@@ -172,7 +202,7 @@ export function checklistItems(data) {
 export function revealChecklistItem(id) {
   if (!DATA || !id) return;
   let accId = null;
-  (DATA.checklist || []).forEach((p, pi) => { if ((p.items || []).some(it => it.id === id)) accId = `chk-phase-${pi}`; });
+  getPhases().forEach((p, pi) => { if ((p.items || []).some(it => it.id === id)) accId = `chk-phase-${pi}`; });
   if (!accId && loadChecklistCustom().some(c => c.id === id)) accId = 'chk-phase-mine';
   if (accId) setCollapsed(accId, false);
   setRaw(KEYS.checkSmartView, 'all');                  // a Today/Overdue view could hide it
@@ -208,7 +238,7 @@ function savePhaseMoves(m) { set(KEYS.checkMoves, m); }
 // phase (their stored field); baked items (from tips.json) get a display re-home in
 // KEYS.checkMoves — dragging one back to its natural phase clears the entry.
 function applyPhaseMove(id, toKey) {
-  const phases = (DATA && DATA.checklist) || [];
+  const phases = getPhases();
   const customs = loadChecklistCustom();
   if (customs.some(c => c.id === id)) {
     const label = toKey === 'mine' ? 'My tasks' : (phases[+toKey]?.phase || 'My tasks');
@@ -229,7 +259,7 @@ let checkSearchQ = '';   // live search/filter query (view-only; never mutates d
 // work identically. The toolbar lives OUTSIDE #checkPhases, so renderChecklist()'s rebuild doesn't
 // touch it — it's re-rendered only on mount + settings change.
 function checkPhaseOptions() {
-  const labels = [...(DATA.checklist || []).map(p => p.phase), 'My tasks'];
+  const labels = [...getPhases().map(p => p.phase), 'My tasks'];
   return labels.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join('');
 }
 function renderCheckToolbar() {
@@ -390,7 +420,7 @@ function addCheckFromComposer() {
 }
 
 function renderChecklist(today) {
-  const phases = DATA.checklist || [];
+  const phases = getPhases();
   const wrap = $('#checkPhases');
   if (!wrap) return;
   if (!phases.length) { wrap.innerHTML = `<div class="empty">Building the yearlong plan…</div>`; return; }
@@ -554,10 +584,11 @@ function checkItemHTML(it, state, due, now, knownIds, opts = {}) {
   const phaseTag = opts.showPhase && it.phase ? `<span class="ci-phase">${esc(it.phase)}</span>` : '';
   const conf = (it.confidence || '').toLowerCase();
   const confBadge = (conf === 'low' || conf === 'medium') ? `<span class="badge ${conf}">verify</span>` : '';   // flag estimates (matches Explore/Budget/Packing)
-  const del = it._custom
-    ? `<button type="button" class="check-edit" data-edit="${esc(id)}" aria-label="Edit ${esc(it.task)}">✎</button>`
-      + `<button type="button" class="check-del" data-del="${esc(id)}" aria-label="Remove ${esc(it.task)}">✕</button>`
-    : '';
+  // every item is store-backed now (defaults seeded from tips.json, additions in the custom store),
+  // so all rows get edit + delete — the handlers route to the right store by id
+  const del =
+    `<button type="button" class="check-edit" data-edit="${esc(id)}" aria-label="Edit ${esc(it.task)}">✎</button>`
+    + `<button type="button" class="check-del" data-del="${esc(id)}" aria-label="Remove ${esc(it.task)}">✕</button>`;
   const tagBtns = (opts.tags ? tagsFor(opts.tags, id) : [])
     .map(t => `<button type="button" class="chip-tag" data-tagfilter="${esc(t)}" style="--h:${tagHue(t)}" title="Filter by ${esc(t)}">${esc(t)}</button>`)
     .join('');
@@ -596,9 +627,18 @@ function wireChecklist() {
     savePriority(setLevel(p, id, cyclePriority(getLevel(p, id))));   // cycle none→P1→P2→P3→P4→none
     renderChecklist();   // re-render: priority dot + (in Due-soon) the item's position/inclusion
   }));
-  $$('#checkPhases .check-del').forEach(b => b.addEventListener('click', () => {
+  $$('#checkPhases .check-del').forEach(b => b.addEventListener('click', async () => {
     const id = b.dataset.del;
-    saveChecklistCustom(loadChecklistCustom().filter(x => x.id !== id));   // drop from custom store
+    const custom = loadChecklistCustom();
+    const isCustom = custom.some(x => x.id === id);
+    // deleting a default (store-seeded) item is permanent, so confirm; a user-added task deletes fast
+    if (!isCustom) {
+      const task = findPhaseItem(id)?.task || 'this task';
+      if (!await confirmModal(`Delete “${task}” from the checklist?`, { ok: 'Delete', danger: true })) return;
+      deletePhaseItem(id);                                                // drop from the phase store
+    } else {
+      saveChecklistCustom(custom.filter(x => x.id !== id));               // drop from the custom store
+    }
     const m = { ...loadChecks() }; delete m[id]; saveChecks(m);            // clear its checked entry
     const o = loadCheckOrder();                                           // lazy-clean order maps (skip orphaned id)
     Object.keys(o).forEach(k => { o[k] = (o[k] || []).filter(x => x !== id); });
@@ -649,7 +689,9 @@ function openCheckEditor(id) {
   if (!li) return;
   const task = li.querySelector('.ci-task');
   if (!task || li.querySelector('.ci-edit-input')) return;
-  const it = loadChecklistCustom().find(x => x.id === id);
+  const custom = loadChecklistCustom();
+  const isCustom = custom.some(x => x.id === id);
+  const it = isCustom ? custom.find(x => x.id === id) : findPhaseItem(id);   // default items edit in the phase store
   if (!it) return;
 
   const input = document.createElement('input');
@@ -666,7 +708,8 @@ function openCheckEditor(id) {
     if (done) return; done = true;
     if (save) {
       const val = input.value;
-      saveChecklistCustom(renameById(loadChecklistCustom(), id, 'task', val));
+      if (isCustom) saveChecklistCustom(renameById(loadChecklistCustom(), id, 'task', val));
+      else renamePhaseItem(id, val);
       renderChecklist();                                            // save → close → re-render (matches add/remove)
       document.dispatchEvent(new CustomEvent('jwh:data-changed'));  // refresh dashboard teaser/bell
     } else {
