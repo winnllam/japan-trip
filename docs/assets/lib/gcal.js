@@ -18,15 +18,28 @@ export function nextDayISO(iso) {
  * end.date is exclusive (the day after endDate || date).
  * description field order: bookingNotes (baked) → note (user) → why (baked) → ''
  */
+// The app is JST-centric — a `time` is a Tokyo wall-clock time — so timed events sync with an
+// explicit Asia/Tokyo zone (Google places them correctly regardless of the viewer's timezone).
+// Events with no `time` stay all-day (DATE, exclusive end), unchanged.
+const TZ = 'Asia/Tokyo';
+const hhmm = (t) => /^\d{1,2}:\d{2}$/.test(t || '') ? String(t).padStart(5, '0') : '';
+function plusHour(dateISO, t) {   // end = +1h, rolling to the next day if it crosses midnight
+  let [h, m] = t.split(':').map(Number); h += 1; let d = dateISO;
+  if (h >= 24) { h -= 24; d = nextDayISO(dateISO); }
+  return `${d}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+}
 export function eventToGcal(ev) {
-  const endDay = nextDayISO(ev.endDate || ev.date);
-  return {
-    summary: ev.title || '',
-    location: ev.area || '',
-    description: ev.bookingNotes || ev.note || ev.why || '',
-    start: { date: ev.date },
-    end: { date: endDay },
-  };
+  const base = { summary: ev.title || '', location: ev.area || '', description: ev.bookingNotes || ev.note || ev.why || '' };
+  const t = hhmm(ev.time);
+  if (t) {
+    const endT = hhmm(ev.endTime);
+    return {
+      ...base,
+      start: { dateTime: `${ev.date}T${t}:00`, timeZone: TZ },
+      end: { dateTime: endT ? `${ev.date}T${endT}:00` : plusHour(ev.date, t), timeZone: TZ },
+    };
+  }
+  return { ...base, start: { date: ev.date }, end: { date: nextDayISO(ev.endDate || ev.date) } };
 }
 
 // --- Map helpers (immutable) ---
