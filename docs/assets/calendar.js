@@ -27,6 +27,7 @@ import { weekHTML, dayHTML, wireWeek, weekLabel } from './calendar-week.js';
 import { monthHTML, panelHTML, wirePanel, wireCells, wireMonthSelect, wireReschedule, wireEndless, scrollToMonth, scrollToDay, extendWindow, ensureWindowCovers, centerWindowOn, captureAnchor, restoreAnchor } from './calendar-month.js';
 import { openModal, openExport, onImport } from './calendar-editor.js';
 import { ensureRoute } from './lazyroutes.js';
+import { markReveal } from './router.js';
 import { birthdaysByDate } from './lib/people.js';
 import { recurOccurrences, isRecurring } from './lib/recur.js';
 import { askCalendar } from './lib/modal.js';
@@ -162,7 +163,9 @@ export function taskChipHTML(t) {
 // jump from a calendar task chip to the checklist item it represents
 export function gotoTask(taskId) {
   dismissPopover();
-  if (location.hash !== '#/checklist') location.hash = '#/checklist';
+  // markReveal() tells the router to skip its scroll-to-top reset for THIS nav, so revealChecklistItem's
+  // scroll below isn't clobbered by the transition's late reset (which lands after this fixed delay).
+  if (location.hash !== '#/checklist') { markReveal(); location.hash = '#/checklist'; }
   // let the route transition swap views before scrolling/focusing the target row
   setTimeout(() => revealChecklistItem(taskId), 60);
 }

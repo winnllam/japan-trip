@@ -43,6 +43,14 @@ let current = null;
 let pendingNavSource = null;
 export function markNavSource(src) { pendingNavSource = src; }
 
+// Deep-link reveal flag: set by a cross-route "jump to this item" (e.g. a calendar task chip →
+// the checklist row). When set, activate() skips its scroll-to-top reset AND the heading focus for
+// THIS nav, so the caller's own scrollIntoView/focus (which runs after the swap) isn't clobbered by
+// the transition's .finished reset (which lands ~250ms later, after a fixed-delay reveal). One-shot,
+// consumed at the next activate — like pendingNavSource.
+let pendingReveal = false;
+export function markReveal() { pendingReveal = true; }
+
 // per-route document title so browser tabs + history entries read like real pages
 const TITLES = {
   dashboard: 'Dashboard', calendar: 'Calendar', people: 'People', checklist: 'Checklist',
@@ -65,9 +73,10 @@ function activate(route, { scroll = true } = {}) {
   // the global html{scroll-behavior:smooth} that animation is a visible ~300ms "scroll down for a
   // second" flash before the reset lands. Forcing 'auto' makes every scroll during the transition
   // instant, so the reset inside the swap holds and nothing animates. Restored in .then below.
+  const reveal = pendingReveal; pendingReveal = false;   // one-shot: this nav jumps to an in-page item, so don't reset scroll / focus the heading
   const changing = route !== current;   // only reset scroll on a real route change (clicking the active tab shouldn't)
   const de = document.documentElement;
-  if (changing) de.style.scrollBehavior = 'auto';   // only touch it for a real nav; ALWAYS restored to '' in .then (unconditional, so it can never latch 'auto' — a guarded restore could)
+  if (changing && !reveal) de.style.scrollBehavior = 'auto';   // only touch it for a real nav; ALWAYS restored to '' in .then (unconditional, so it can never latch 'auto' — a guarded restore could)
   const resetTop = () => {
     document.getElementById('main')?.scrollTo({ top: 0 });
     if (route !== 'calendar') window.scrollTo({ top: 0 });   // calendar owns its own scroll (positions to today)
@@ -78,17 +87,19 @@ function activate(route, { scroll = true } = {}) {
     // reset IN the swap: same frame the new (short) layout applies, so the window never renders at the
     // clamped bottom — this is what removes the flash (the pre-swap reset ran while the tall calendar
     // was still laid out; the shrink then re-clamped it)
-    if (scroll && changing) resetTop();
+    if (scroll && changing && !reveal) resetTop();
   };
   // consume the keyboard-nav flag: a keyboard route-swap renders instantly (no View Transition).
   const instant = pendingNavSource === 'keyboard';
   pendingNavSource = null;
   const swapped = instant ? (swap(), Promise.resolve()) : transitionView(swap);
   swapped.then(() => {
-    if (scroll && changing && route === current) resetTop();   // belt-and-suspenders; skip if a faster later nav superseded this
+    if (scroll && changing && !reveal && route === current) resetTop();   // belt-and-suspenders; skip if a faster later nav superseded this
     de.style.scrollBehavior = '';                  // restore CSS-default smooth for in-page scrolling
-    // prefer a VISIBLE heading (compact hides some page titles; focusing a display:none node is a silent no-op)
-    const h = [...target.querySelectorAll('h1, h2, h3')].find(x => x.offsetParent !== null) || target.querySelector('h1, h2, h3');
+    // prefer a VISIBLE heading (compact hides some page titles; focusing a display:none node is a silent no-op).
+    // Skip on a reveal nav — the caller focuses the target item itself, and stealing that focus back to
+    // the heading would fight it.
+    const h = reveal ? null : ([...target.querySelectorAll('h1, h2, h3')].find(x => x.offsetParent !== null) || target.querySelector('h1, h2, h3'));
     if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
   });
   let activeNav = null;
