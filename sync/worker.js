@@ -82,18 +82,10 @@ export default {
       if (!tripId) return new Response('not found', { status: 404, headers: PUBLIC_CORS });
       const rawDoc = await env.TRIPS.get(tripId);
       const doc = rawDoc ? JSON.parse(rawDoc) : { data: {} };
-      // The full trip calendar = baked events (public repo tips.json) minus the ones the owner
-      // deleted, plus their manually-added events. So the feed matches what they actually see.
-      let baked = [];
-      try {
-        const tr = await fetch('https://raw.githubusercontent.com/winnllam/japan-trip/main/docs/data/tips.json', { cf: { cacheTtl: 3600, cacheEverything: true } });
-        if (tr.ok) { const tips = await tr.json(); if (Array.isArray(tips.calendar)) baked = tips.calendar; }
-      } catch { /* repo unreachable → user events only */ }
-      let userEv = [], hidden = [];
-      try { userEv = doc.data['jwh-events-v1'] ? JSON.parse(doc.data['jwh-events-v1']) : []; } catch { userEv = []; }
-      try { hidden = doc.data['jwh-evhidden-v1'] ? JSON.parse(doc.data['jwh-evhidden-v1']) : []; } catch { hidden = []; }
-      const hide = new Set(hidden);
-      const events = [...baked.filter(e => e && !hide.has(e.id)), ...userEv];
+      // The whole trip calendar now lives in the store as regular events (jwh-events-v1) — baked
+      // events were migrated in, so edits/deletes are native and reflected here automatically.
+      let events = [];
+      try { events = doc.data['jwh-events-v1'] ? JSON.parse(doc.data['jwh-events-v1']) : []; } catch { events = []; }
       if (fmt === 'ics') {
         return new Response(toICS(events, 'My Japan Trip', doc && doc.updatedAt), { status: 200, headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-store', ...PUBLIC_CORS } });
       }
