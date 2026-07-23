@@ -52,6 +52,24 @@ export function reorderStopsIn(plans, date, orderedIds) {
 export function setPlanMetaIn(plans, date, fields) {
   return { ...plans, [date]: { ...normalizePlan(date, plans[date]), ...fields } };
 }
+// Move a whole day plan from one date to another (re-dating the plan object). If `merge` and the
+// target already has stops, the moved stops are appended to the target's (target title/note win);
+// otherwise the target is replaced. The source date is removed. No-op if from===to or nothing at
+// `from`. Pure — returns a new plans object.
+export function movePlanIn(plans, fromDate, toDate, { merge = false } = {}) {
+  if (!fromDate || !toDate || fromDate === toDate || !plans[fromDate]) return plans;
+  const moved = normalizePlan(toDate, plans[fromDate]);   // same title/note/stops, re-dated to toDate
+  const next = { ...plans };
+  const dest = next[toDate];
+  if (merge && dest && Array.isArray(dest.stops) && dest.stops.length) {
+    const d = normalizePlan(toDate, dest);
+    next[toDate] = { ...d, title: d.title || moved.title, note: d.note || moved.note, stops: [...d.stops, ...moved.stops] };
+  } else {
+    next[toDate] = moved;
+  }
+  delete next[fromDate];
+  return next;
+}
 
 // one all-day calendar event summarising a plan (reuses lib/ics.js + the events store)
 export function planToEvents(plan) {

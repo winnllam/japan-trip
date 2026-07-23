@@ -202,6 +202,29 @@ test('dayplan removeStopIn isolates other dates; planToEvents → one all-day ev
   assert.equal(planToEvents({ date: 'd', stops: [] }).length, 0);        // empty → no event
 });
 
+import { movePlanIn } from '../docs/assets/lib/dayplan.js';
+test('dayplan movePlanIn re-dates a plan to an empty day and clears the source', () => {
+  const plans = { d1: { date: 'd1', title: 'Nikko', note: 'foliage', stops: [{ id: 'a' }, { id: 'b' }] } };
+  const after = movePlanIn(plans, 'd1', 'd2');
+  assert.equal(after.d1, undefined);                                     // source removed
+  assert.equal(after.d2.date, 'd2');                                     // re-dated
+  assert.equal(after.d2.title, 'Nikko');
+  assert.deepEqual(after.d2.stops.map(s => s.id), ['a', 'b']);
+});
+test('dayplan movePlanIn merges into an occupied day (target meta wins, stops append)', () => {
+  const plans = { d1: { date: 'd1', title: 'Src', stops: [{ id: 'a' }] },
+                  d2: { date: 'd2', title: 'Dest', stops: [{ id: 'x' }, { id: 'y' }] } };
+  const after = movePlanIn(plans, 'd1', 'd2', { merge: true });
+  assert.equal(after.d1, undefined);
+  assert.equal(after.d2.title, 'Dest');                                  // target title kept
+  assert.deepEqual(after.d2.stops.map(s => s.id), ['x', 'y', 'a']);      // appended
+});
+test('dayplan movePlanIn is a no-op on same date / missing source', () => {
+  const plans = { d1: { date: 'd1', stops: [{ id: 'a' }] } };
+  assert.equal(movePlanIn(plans, 'd1', 'd1'), plans);
+  assert.equal(movePlanIn(plans, 'nope', 'd2'), plans);
+});
+
 import { readFileSync } from 'node:fs';
 import { setPlanMetaIn } from '../docs/assets/lib/dayplan.js';
 

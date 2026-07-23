@@ -19,11 +19,11 @@ import { directionsUrl, waypointsUrl } from './lib/directions.js';
 import { KEYS, get, set } from './lib/store.js';
 import {
   loadPlans, savePlans, getPlan, hasPlan, newStop, planToEvents,
-  upsertStop, removeStop, patchStop, reorderStops,
+  upsertStop, removeStop, patchStop, reorderStops, movePlanIn,
 } from './lib/dayplan.js';
 import { itineraryDay, itineraryStops } from './lib/itinerary.js';
 import { makeSortable } from './dnd.js';
-import { alertModal } from './lib/modal.js';
+import { alertModal, confirmModal, askDate } from './lib/modal.js';
 
 let DATA = null, activeDate = '';
 
@@ -223,6 +223,7 @@ function render() {
       <button type="button" class="plan-add" data-act="add">＋ Add a stop</button>
       <button type="button" class="plan-btn" data-act="map">🗺 Show route on map</button>
       ${dayDir.url ? `<a class="plan-btn" href="${esc(dayDir.url)}" target="_blank" rel="noopener noreferrer">🧭 Directions for the day</a>` : ''}
+      <button type="button" class="plan-btn" data-act="move">↪ Move day…</button>
       <button type="button" class="plan-btn" data-act="ics">⬇ .ics</button>
       <button type="button" class="plan-btn" data-act="gcal">📅 Google</button>
       <button type="button" class="plan-btn" data-act="addcal">＋ Add to calendar</button>
@@ -288,6 +289,7 @@ function onBodyClick(e) {
   if (act === 'ics') return downloadICS();
   if (act === 'gcal') { const evs = planToEvents(plan); if (evs[0]) window.open(gcalUrl(evs[0]), '_blank', 'noopener'); return; }
   if (act === 'addcal') return addToCalendar();
+  if (act === 'move') return moveDay();
   if (edit === 'del') {
     const cur = getPlan(activeDate);
     if (cur && cur.stops.length === 1 && cur.stops[0].id === id) {   // last stop → also drop the linked 'plan:DATE' calendar event so it isn't orphaned
@@ -433,6 +435,50 @@ function addToCalendar() {
   document.dispatchEvent(new CustomEvent('jwh:data-changed'));
   announce('Added the day to your calendar');
   alertModal('Added this day to your calendar — see it on the Calendar page.');
+}
+
+// ---- move the whole day to another date ----
+// Prompts for the target date; if that day already has a plan, offers to merge the stops. Any
+// calendar events linked to this day (per-stop evstop-* and the whole-day plan:* summary) follow
+// to the new date. One dispatch (via savePlans) re-renders the rail + body; we land on the target.
+async function moveDay() {
+  const plan = getPlan(activeDate);
+  if (!plan?.stops?.length) return;
+  const to = await askDate('Move this day’s plan to which date?', { value: activeDate });
+  if (to === null) return;                                   // cancelled
+  const toDate = (to || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(toDate)) { if (toDate) alertModal('Use a valid date (YYYY-MM-DD).'); return; }
+  if (toDate === activeDate) return;                         // same day → no-op
+  let merge = false;
+  if (hasPlan(toDate)) {
+    if (!await confirmModal(`${fmtShort(toDate)} already has a plan. Merge this day’s stops into it?`, { ok: 'Merge' })) return;
+    merge = true;
+  }
+  const from = activeDate;
+  activeDate = toDate;                                         // set BEFORE the write so the re-render lands on the moved day
+  rekeyPlanEvents(from, toDate, merge);                        // move linked calendar events (no dispatch)
+  savePlans(movePlanIn(loadPlans(), from, toDate, { merge })); // dispatches jwh:data-changed once → re-render (rail + body on toDate)
+  announce(`Moved the plan to ${fmtShort(toDate)}`);
+}
+// Re-date the calendar events linked to a day when its plan moves: the per-stop "add to calendar"
+// events (evstop-<date>-<stopId>) and the whole-day summary (plan:<date>). set() (no dispatch) —
+// the savePlans call in moveDay fires the single jwh:data-changed.
+function rekeyPlanEvents(fromDate, toDate, merge) {
+  const stopPrefix = `evstop-${fromDate}-`;
+  const evs = get(KEYS.events, []) || [];
+  const destHasSummary = evs.some(e => e.id === `plan:${toDate}`);
+  const next = evs.map(e => {
+    if (e.id && e.id.startsWith(stopPrefix)) {
+      const stopId = e.id.slice(stopPrefix.length);
+      return { ...e, id: `evstop-${toDate}-${stopId}`, date: toDate, fromStop: `${toDate}:${stopId}` };
+    }
+    if (e.id === `plan:${fromDate}`) {
+      if (merge && destHasSummary) return null;                // target already summarised → drop the moved one (dedupe)
+      return { ...e, id: `plan:${toDate}`, date: toDate };
+    }
+    return e;
+  }).filter(Boolean);
+  set(KEYS.events, next);
 }
 
 // wire the change-event listener once at module init (delegated)
