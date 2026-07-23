@@ -1,8 +1,8 @@
 'use strict';
 // Map page (#/map). PROGRESSIVE ENHANCEMENT over an always-rendered, offline-safe link
 // index (#mapList): the grouped Google-Maps links ALWAYS render (the only part that works
-// offline). Leaflet + markercluster (unpkg, lazy, network-only, never precached) + OSM
-// tiles + Nominatim layer ADDITIVELY into #mapCanvas; if they fail, the link index stands.
+// offline). Leaflet + markercluster (self-hosted under assets/vendor/leaflet, lazy, precached) +
+// OSM tiles + Nominatim layer ADDITIVELY into #mapCanvas; if they fail, the link index stands.
 //
 // All user-place mutation goes through lib/places.js (one source of truth). Pins come from
 // THREE sources unified by placesModel(): upcoming events, the baked catalogue (neighbourhood
@@ -283,15 +283,9 @@ export function placesModel() {
 
 // ====================================================================== Leaflet bootstrap
 // Pinned Subresource-Integrity hashes (sha384, computed from the immutable @version files).
-// A tampered/hijacked unpkg asset fails the integrity check → onerror → the offline link
-// index stands alone. crossOrigin='anonymous' is required for SRI to be enforced.
-const SRI = {
-  leafletCss: 'sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H',
-  leafletJs: 'sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH',
-  mcCss: 'sha384-pmjIAcz2bAn0xukfxADbZIb3t8oRT9Sv0rvO+BR5Csr6Dhqq+nZs59P0pPKQJkEV',
-  mcDefCss: 'sha384-wgw+aLYNQ7dlhK47ZPK7FRACiq7ROZwgFNg0m04avm4CaXS+Z9Y7nMu8yNjBKYC+',
-  mcJs: 'sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr',
-};
+// Leaflet + markercluster are now SELF-HOSTED under assets/vendor/leaflet/ (was unpkg — some
+// networks/CSPs blocked the CDN, which silently killed the map). Same-origin, so no SRI/crossOrigin
+// needed; they're precached by the service worker so the map also works offline.
 function loadCSS(href, integrity) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; if (integrity) { l.integrity = integrity; l.crossOrigin = 'anonymous'; } document.head.appendChild(l); }
 function loadScript(src, ok, err, integrity) { const s = document.createElement('script'); s.src = src; if (integrity) { s.integrity = integrity; s.crossOrigin = 'anonymous'; } s.onload = ok; s.onerror = err; document.head.appendChild(s); }
 function ensureLeaflet() {
@@ -300,11 +294,12 @@ function ensureLeaflet() {
   const canvas = $('#mapCanvas'); if (canvas) canvas.classList.add('loading');   // spinner while the lazy CDN scripts arrive (blank canvas reads as broken)
   const fail = () => { leafletTried = false; const e = $('#mapCanvas'); if (e) { e.classList.remove('loading'); e.classList.add('failed'); } };  // offline / integrity-fail → link index stands; retry next visit
   if (window.L && window.L.markerClusterGroup) { initMap(); return; }
-  loadCSS('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', SRI.leafletCss);
-  loadCSS('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css', SRI.mcCss);
-  loadCSS('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css', SRI.mcDefCss);
-  loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    () => loadScript('https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', initMap, fail, SRI.mcJs), fail, SRI.leafletJs);
+  const V = 'assets/vendor/leaflet/';   // relative to the page (docs/) — works under the /japan-trip/ Pages base path
+  loadCSS(V + 'leaflet.css');
+  loadCSS(V + 'MarkerCluster.css');
+  loadCSS(V + 'MarkerCluster.Default.css');
+  loadScript(V + 'leaflet.js',
+    () => loadScript(V + 'leaflet.markercluster.js', initMap, fail), fail);
 }
 // The hash router fires jwh:route BEFORE the view is laid out (display:none→block), so a
 // Leaflet map measured then reads 0×0 and markercluster renders nothing. Poll until the

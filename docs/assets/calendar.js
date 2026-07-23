@@ -141,7 +141,7 @@ function shiftEnd(oldStart, newStart, endDate) {
 }
 function bakedEvents() {
   const ov = loadOverrides();
-  return (DATA.calendar || []).map(e => ov[e.id]
+  return ((DATA && DATA.calendar) || []).map(e => ov[e.id]
     ? { ...e, date: ov[e.id], endDate: shiftEnd(e.date, ov[e.id], e.endDate), source: 'baked', moved: true }
     : { ...e, source: 'baked' });
 }
