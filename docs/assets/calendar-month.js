@@ -86,17 +86,18 @@ export function monthHTML() {
   const rangeEnd = (() => { const dow = new Date(lastDay + 'T00:00:00Z').getUTCDay(); return addDaysISO(lastDay, 6 - dow); })();
 
   const evs = allEvents().filter(visible);
-  // evergreen (season-long / 'seasonal') events stay OUT of the day grid (they'd flood every cell).
-  // The "Ongoing this season" strip that used to surface them was removed for vertical space
-  // (owner) — they remain reachable via the Find/add search popover and the agenda view.
+  // Season-long events (koyo peaks, illumination seasons — span > SPAN_CAP) render as spanning BARS
+  // in the month view too, so they're visible on the grid, not just in the day popover. On a ~4-week
+  // trip a "season" is at most a few weeks, so a bar per week row is informative, not a flood. (The
+  // week/day time-grid + agenda still exclude them — a multi-week all-day band there IS a flood.)
 
-  // multi-day (non-evergreen, non-recurring) events → TRUE spanning BARS: one element per event per week,
-  // spanning its day columns, so the FULL title shows across the width (Notion-style). Greedy lane packing.
+  // multi-day (non-recurring) events → TRUE spanning BARS: one element per event per week, spanning its
+  // day columns, so the FULL title shows across the width (Notion-style). Greedy lane packing.
   const spanEvents = [];   // { ev, s, en, fullEnd, lane }  — s/en clamped to the visible range; fullEnd = real end (dimming)
   {
     const seen = new Set();
     for (const e of evs) {
-      if (isEvergreen(e) || !isMultiDay(e) || isRecurring(e) || seen.has(e.id)) continue;
+      if (!isMultiDay(e) || isRecurring(e) || seen.has(e.id)) continue;
       seen.add(e.id);
       const s = e.date.slice(0, 10), en = (e.endDate && parseISO(e.endDate)) ? e.endDate.slice(0, 10) : s;
       const cs = s < rangeStart ? rangeStart : s, ce = en > rangeEnd ? rangeEnd : en;

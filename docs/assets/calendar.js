@@ -75,6 +75,31 @@ function migrateEventCats() {
   if (touched) set(KEYS.events, next);
   setRaw(KEYS.catMigrateV1, '1');
 }
+// A researched seasonal ESTIMATE (vs a fixed plan): explicitly marked "(approx)", a season-long
+// span, the 'seasonal' bucket, or a low-confidence guess. Pure of the store — takes a raw event.
+const SEASONAL_CAL_ID = 'cal-seasonal';
+function isApproxEvent(e) {
+  if (!e) return false;
+  return /\(approx\)/i.test(e.title || '')
+    || isEvergreen(e)
+    || (e.category || 'personal') === 'seasonal'
+    || String(e.confidence || '').toLowerCase() === 'low';
+}
+// One-time: gather those estimates (foliage/illumination markers, etc.) into ONE "Seasonal (approx)"
+// calendar so they toggle as a single group instead of scattering across the type filters. Fixed
+// plans (flights, Hakone nights, national holidays, Halloween) are left on their own categories.
+// Runs after the disney→park pass, before the panel/colours are built. Flag-guarded, writes silently.
+function migrateSeasonalCalendar() {
+  if (getRaw(KEYS.seasonalCalMig) === '1') return;
+  const evs = get(KEYS.events, []) || [];
+  if (evs.some(isApproxEvent)) {
+    if (!customCals().some(c => c.id === SEASONAL_CAL_ID)) {
+      set(KEYS.calendars, addCalendar(customCals(), { name: 'Seasonal (approx)', color: '#b8541a' }, SEASONAL_CAL_ID));
+    }
+    set(KEYS.events, evs.map(e => isApproxEvent(e) ? { ...e, category: SEASONAL_CAL_ID } : e));
+  }
+  setRaw(KEYS.seasonalCalMig, '1');
+}
 export function goAgenda() { mode = 'agenda'; render(); }
 function changed() { document.dispatchEvent(new CustomEvent('jwh:data-changed')); }
 
@@ -212,7 +237,8 @@ export function mountCalendar(data, today) {
   if (_calMounted) return; _calMounted = true;   // mount-once: document/window listeners below must not double-register
   DATA = data;
   TODAY = today || nowISO();
-  migrateEventCats();   // disney → park (once), before any events are read/rendered
+  migrateEventCats();          // disney → park (once), before any events are read/rendered
+  migrateSeasonalCalendar();   // gather approx/seasonal estimates into one calendar (once)
   const cf = get(KEYS.calFilters, []); hiddenCats = new Set(Array.isArray(cf) ? cf : []);   // guard a corrupted (non-array) stored value
   showTasks = getRaw(KEYS.calShowTasks, '') !== 'off';  // on by default; the ☑ Tasks toggle persists your choice
   showUser = showBaked = true;   // the My-events/Researched source split was retired (all events are user events now) — visible() keeps both on
