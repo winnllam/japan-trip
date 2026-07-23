@@ -33,7 +33,8 @@ export const KEYS = {
   dismissed: 'jwh-notif-dismissed-v1',
   checklist: 'jwh-checklist-v1',
   catMigrateV1: 'jwh-cal-catmig-v1',            // one-time flag: disney→park event-category rename applied
-  seasonalCalMig: 'jwh-cal-seasonalmig-v1',     // one-time flag: researched approx/seasonal events gathered into the "Seasonal (approx)" calendar
+  seasonalCalMig: 'jwh-cal-seasonalmig-v1',     // one-time flag: researched approx/seasonal events grouped under the "Seasonal (approx)" calendar
+  seasonalTypeMig: 'jwh-cal-seasonaltypemig-v1',// one-time flag: restore real TYPE categories on seasonal events the v1 migration retyped (parent now carries the grouping)
   checklistPhases: 'jwh-checklist-phases-v1',   // the phased default items, moved into the store (seeded once from tips.json) — editable + synced
   checklistCustom: 'jwh-checklist-custom-v1',
   checkHideDone: 'jwh-check-hidedone-v1',

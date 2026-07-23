@@ -90,16 +90,42 @@ function isApproxEvent(e) {
 // calendar so they toggle as a single group instead of scattering across the type filters. Fixed
 // plans (flights, Hakone nights, national holidays, Halloween) are left on their own categories.
 // Runs after the disney→park pass, before the panel/colours are built. Flag-guarded, writes silently.
+function ensureSeasonalCal() {
+  if (!customCals().some(c => c.id === SEASONAL_CAL_ID)) {
+    set(KEYS.calendars, addCalendar(customCals(), { name: 'Seasonal (approx)', color: '#b8541a' }, SEASONAL_CAL_ID));
+  }
+}
 function migrateSeasonalCalendar() {
   if (getRaw(KEYS.seasonalCalMig) === '1') return;
   const evs = get(KEYS.events, []) || [];
   if (evs.some(isApproxEvent)) {
-    if (!customCals().some(c => c.id === SEASONAL_CAL_ID)) {
-      set(KEYS.calendars, addCalendar(customCals(), { name: 'Seasonal (approx)', color: '#b8541a' }, SEASONAL_CAL_ID));
-    }
-    set(KEYS.events, evs.map(e => isApproxEvent(e) ? { ...e, category: SEASONAL_CAL_ID } : e));
+    ensureSeasonalCal();
+    // GROUP (parent), don't retype: the event keeps its type category (colour + "Filter by type");
+    // parent points at the Seasonal calendar so its toggle shows/hides the whole group.
+    set(KEYS.events, evs.map(e => isApproxEvent(e) ? { ...e, parent: SEASONAL_CAL_ID } : e));
   }
   setRaw(KEYS.seasonalCalMig, '1');
+}
+// v1 of the seasonal migration OVERWROTE category with the calendar id (so events all showed the one
+// calendar colour). Reverse it: restore each event's real TYPE (so it colours by type + rejoins the
+// type filters) and move the grouping to `parent`. Original types come from the baked ids; anything
+// else falls back to 'seasonal'. One-time, after ensureSeasonalCal so the calendar exists.
+const APPROX_TYPE = {
+  'trip-autumn-food': 'seasonal', 'trip-koyo-nikko': 'nature', 'trip-illum': 'illumination',
+  'trip-kawaguchiko': 'nature', 'trip-meiji-yabusame': 'festival', 'trip-ramen-show': 'food',
+  'trip-disney-xmas': 'park', 'trip-hakone-koyo': 'nature', 'trip-tokyo-parks': 'nature',
+};
+function migrateSeasonalTypes() {
+  if (getRaw(KEYS.seasonalTypeMig) === '1') return;
+  const evs = get(KEYS.events, []) || [];
+  let touched = false;
+  const next = evs.map(e => {
+    if (!e || e.category !== SEASONAL_CAL_ID) return e;
+    touched = true;
+    return { ...e, category: APPROX_TYPE[e.id] || 'seasonal', parent: SEASONAL_CAL_ID };
+  });
+  if (touched) { ensureSeasonalCal(); set(KEYS.events, next); }
+  setRaw(KEYS.seasonalTypeMig, '1');
 }
 export function goAgenda() { mode = 'agenda'; render(); }
 function changed() { document.dispatchEvent(new CustomEvent('jwh:data-changed')); }
@@ -215,8 +241,14 @@ export function applyCalColors() {
 }
 
 export function catOf(e) { return e.category || 'personal'; }
+// An event's TYPE (category → colour + "Filter by type") is independent of its optional grouping
+// CALENDAR (parent → a "Your calendars" toggle like "Seasonal (approx)"). Both dimensions share the
+// hiddenCats set (type ids and calendar ids are disjoint); an event hides if EITHER is toggled off.
+export function parentOf(e) { return e && e.parent ? e.parent : ''; }
 export function visible(e) {
   if (hiddenCats.has(catOf(e))) return false;
+  const par = parentOf(e);
+  if (par && hiddenCats.has(par)) return false;   // its grouping calendar (parent) is hidden
   const isUser = e.source === 'user';   // baked events (incl. overrides) are 'baked'; user + imported .ics are 'user'
   if (isUser && !showUser) return false;
   if (!isUser && !showBaked) return false;
@@ -241,7 +273,8 @@ export function mountCalendar(data, today) {
   DATA = data;
   TODAY = today || nowISO();
   migrateEventCats();          // disney → park (once), before any events are read/rendered
-  migrateSeasonalCalendar();   // gather approx/seasonal estimates into one calendar (once)
+  migrateSeasonalCalendar();   // group approx/seasonal estimates under the Seasonal calendar (once)
+  migrateSeasonalTypes();      // v1 fix: restore real types on already-grouped events (once)
   const cf = get(KEYS.calFilters, []); hiddenCats = new Set(Array.isArray(cf) ? cf : []);   // guard a corrupted (non-array) stored value
   showTasks = getRaw(KEYS.calShowTasks, '') !== 'off';  // on by default; the ☑ Tasks toggle persists your choice
   showUser = showBaked = true;   // the My-events/Researched source split was retired (all events are user events now) — visible() keeps both on
@@ -444,12 +477,16 @@ function buildCalendars() {
   const catSel = (c) => `#calCalendars .calrow[data-cat="${window.CSS ? CSS.escape(c) : c}"]`;
   // "show only this" (or un-isolate back to all if it's already the only one shown) — shared by
   // double-click AND Shift+activation (Shift+click / Shift+Enter, the keyboard path to isolate).
+  const calIds = new Set(cals.map(c => c.id));
   const isolate = (c) => {
     if (_legendTimer) { clearTimeout(_legendTimer); _legendTimer = null; }
-    const others = allCats.filter(x => x !== c);
+    // isolate WITHIN one dimension — grouping calendars vs types — so "show only this type" never
+    // also hides a type via a calendar's parent, and vice-versa (they share hiddenCats but are disjoint)
+    const universe = calIds.has(c) ? [...calIds] : present;
+    const others = universe.filter(x => x !== c);
     const isolated = !hiddenCats.has(c) && others.every(x => hiddenCats.has(x));
-    hiddenCats.clear();
-    if (!isolated) others.forEach(x => hiddenCats.add(x));   // isolate to c; if already isolated, un-isolate (show all)
+    universe.forEach(x => hiddenCats.delete(x));   // clear only this dimension's hides
+    if (!isolated) others.forEach(x => hiddenCats.add(x));   // isolate to c; if already isolated, un-isolate
     persistFilters(); buildCalendars(); render(); focusRow(catSel(c));
   };
   $$('#calCalendars .calrow[data-cat]').forEach(b => {
@@ -491,9 +528,13 @@ function buildCalendars() {
     const r = await askCalendar(CAL_PALETTE, cal);
     if (!r) return;
     if (r.remove) {
-      if (!await confirmModal(`Delete “${cal.name}”? Its events move to My events (they keep their date).`, { ok: 'Delete', danger: true })) return;
-      const reassigned = loadUser().map(e => e.category === cal.id ? { ...e, category: 'personal' } : e);
-      saveUser(reassigned);   // no orphaned raw-id categories left behind (dispatches jwh:data-changed)
+      if (!await confirmModal(`Delete “${cal.name}”? Its events keep their date + type — they’re just no longer grouped.`, { ok: 'Delete', danger: true })) return;
+      const reassigned = loadUser().map(e => {
+        if (e.parent === cal.id) { const { parent, ...rest } = e; return rest; }   // ungroup — keep the event + its type category
+        if (e.category === cal.id) return { ...e, category: 'personal' };          // legacy: a cal-id-as-category event → personal
+        return e;
+      });
+      saveUser(reassigned);   // no orphaned calendar refs left behind (dispatches jwh:data-changed)
       persistCals(removeCalendar(customCals(), cal.id));
       dndToast(`Calendar “${cal.name}” deleted`);
       return;

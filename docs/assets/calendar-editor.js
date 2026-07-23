@@ -11,13 +11,15 @@ import { TODAY, CATS, allEvents, catOf, loadUser, saveUser, syncPlaceDate, delet
 // ---- add/edit modal ----
 export function openModal(ev, presetDate, presetEnd, presetTime) {
   const e = ev || { id: '', title: '', date: presetDate || TODAY, endDate: presetEnd || '', time: presetTime || '', endTime: '', category: 'personal', note: '' };
-  // Your calendars first (as an optgroup), then the researched categories. Preserve a non-standard
-  // (e.g. imported .ics) category that matches neither, so editing never silently rewrites it.
+  // Two independent dimensions: TYPE (category → colour + "Filter by type") and the optional grouping
+  // CALENDAR (parent → a "Your calendars" toggle). The Type dropdown is the researched categories
+  // (preserving a non-standard imported one so editing never silently rewrites it); the Calendar
+  // dropdown (only when calendars exist) picks the parent group, "None" to ungroup.
   const cals = customCals();
-  const known = new Set([...CATS, ...cals.map(c => c.id)]);
-  const extra = (e.category && !known.has(e.category)) ? [e.category] : [];
-  const optCals = cals.length ? `<optgroup label="Your calendars">${cals.map(c => `<option value="${esc(c.id)}" ${c.id === e.category ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</optgroup>` : '';
-  const opts = optCals + [...extra, ...CATS].map(c => `<option value="${esc(c)}" ${c === (e.category || 'personal') ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  const extra = (e.category && !CATS.includes(e.category) && !cals.some(c => c.id === e.category)) ? [e.category] : [];
+  const opts = [...extra, ...CATS].map(c => `<option value="${esc(c)}" ${c === (e.category || 'personal') ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  const calOpts = `<option value="">None</option>` + cals.map(c => `<option value="${esc(c.id)}" ${c.id === (e.parent || '') ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  const calField = cals.length ? `<label>Calendar<select name="parent">${calOpts}</select></label>` : '';
   const gbtn = ev ? `<a class="btn ghost" href="${esc(gcalUrl(e))}" target="_blank" rel="noopener noreferrer">+ Google</a>` : '';
   const body = `
     <h3 class="modal-title">${ev ? 'Edit event' : 'Add event'}</h3>
@@ -32,7 +34,7 @@ export function openModal(ev, presetDate, presetEnd, presetTime) {
         <label>End time (optional)<input name="endTime" type="time" value="${esc(e.endTime || '')}"></label>
       </div>
       <div class="row2">
-        <label>Category<select name="category">${opts}</select></label>
+        <label>Type<select name="category">${opts}</select></label>
         <label>Repeats<select name="recur" id="evRecur">
           <option value="none"${!e.recur || e.recur === 'none' ? ' selected' : ''}>Doesn’t repeat</option>
           <option value="weekly"${e.recur === 'weekly' ? ' selected' : ''}>Weekly</option>
@@ -40,6 +42,7 @@ export function openModal(ev, presetDate, presetEnd, presetTime) {
           <option value="yearly"${e.recur === 'yearly' ? ' selected' : ''}>Yearly (birthday, anniversary…)</option>
         </select></label>
       </div>
+      ${calField}
       <label class="ev-loc-field">Location (optional)
         <input name="area" id="evArea" value="${esc(e.area || '')}" placeholder="Search an address…" autocomplete="off">
         <ul id="evAreaSug" class="ev-loc-sug" role="listbox" aria-label="Address suggestions"></ul>
@@ -65,9 +68,11 @@ export function openModal(ev, presetDate, presetEnd, presetTime) {
     if (obj.endDate && obj.endDate < obj.date) { alertModal('End date can’t be before the start date.'); return; }   // else the event is invisible on the grid but counts in alerts
     if (obj.endTime && !obj.time) { alertModal('Add a start time before an end time.'); return; }
     if (obj.time && obj.endTime && !obj.endDate && obj.endTime <= obj.time) { alertModal('End time must be after the start time (same day).'); return; }
+    // "None" (or no calendars) → the event has no parent group; drop the key rather than store ''
+    const withParent = (o) => { if (!o.parent) delete o.parent; return o; };
     const u = (ev && ev.id)
-      ? loadUser().map(x => x.id === ev.id ? { ...x, ...obj } : x)
-      : [...loadUser(), { id: 'u' + Date.now(), ...obj }];
+      ? loadUser().map(x => x.id === ev.id ? withParent({ ...x, ...obj }) : x)
+      : [...loadUser(), withParent({ id: 'u' + Date.now(), ...obj })];
     saveUser(u);
     if (ev && ev.id && obj.date !== (ev.date || '').slice(0, 10)) syncPlaceDate(ev.id, obj.date);   // a linked place follows the edited date
     closeModal(ov, { rerender: true });   // jwh:data-changed → render() (single path)
