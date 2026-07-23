@@ -29,6 +29,7 @@ export const KEYS = {
   widgetOrder: 'jwh-widgetorder-v1',
   arcade: 'jwh-arcade-v1',
   due: 'jwh-due-v1',
+  drops: 'jwh-drops-v1',              // timed-release / booking-window tracker cards (editable, synced)
   dismissed: 'jwh-notif-dismissed-v1',
   checklist: 'jwh-checklist-v1',
   checklistCustom: 'jwh-checklist-custom-v1',

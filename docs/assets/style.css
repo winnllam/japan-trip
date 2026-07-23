@@ -802,8 +802,18 @@ html[data-reduce-motion="on"] .acc-chevron { transition: none; }   /* honor the 
 .trk-group{ margin-bottom: var(--s6); }
 .trk-h{ font-size:.85rem; text-transform:uppercase; letter-spacing:.04em; color: var(--ink-soft); margin:0 0 .6rem; }
 .trk-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap: var(--s4); }
-.trk-card{ background: var(--bg-soft); border:1px solid var(--line); border-left:4px solid var(--indigo);
+.trk-card{ position:relative; background: var(--bg-soft); border:1px solid var(--line); border-left:4px solid var(--indigo);
   border-radius:12px; padding: var(--s4); box-shadow: var(--shadow); }
+.trk-actions{ margin:0 0 var(--s4); }
+.trk-add{ font: inherit; font-size:.82rem; font-weight:700; padding:.4rem .8rem; border:1px dashed var(--line);
+  border-radius:999px; background: var(--bg-soft); color: var(--ink); cursor:pointer; }
+.trk-add:hover{ border-color: var(--indigo); color: var(--indigo); }
+.trk-del{ position:absolute; top:.35rem; right:.35rem; width:1.5rem; height:1.5rem; line-height:1; border:none;
+  border-radius:50%; background:transparent; color: var(--ink-faint); font-size:.85rem; cursor:pointer; opacity:.5; }
+.trk-del:hover{ opacity:1; color: var(--c-personal-ink, #b00); background: var(--bg); }
+.trk-form .trk-l{ display:block; margin:.55rem 0; font-size:.8rem; font-weight:700; color: var(--ink-soft); }
+.trk-form .trk-l .app-modal-input{ margin-top:.25rem; font-weight:400; color: var(--ink); }
+.trk-form textarea.app-modal-input{ resize:vertical; }
 .trk-card.recurring{ border-left-color: var(--gold-ink); }
 .trk-when{ font-size:.74rem; font-weight:700; color: var(--indigo); }
 .trk-card.recurring .trk-when{ color: var(--gold-ink); }

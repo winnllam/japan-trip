@@ -11,7 +11,7 @@ import { placeById, loadPlaces, upsertPlace, patchPlace, deletePlace, catId, dis
 import { approxCoord } from './lib/geo.js';
 import { alertModal, confirmModal } from './lib/modal.js';
 import { attachCardTranslate } from './cardtranslate.js';
-import { mountChecklist, checklistItems } from './checklist-page.js';
+import { mountChecklist } from './checklist-page.js';
 
 let DATA = null;
 let activeConf = 'all';
@@ -20,8 +20,6 @@ let query = '';
 export function renderContent(data, today) {
   DATA = data;
   renderTimeSensitive();
-  renderBookingDeadlines();
-  document.addEventListener('jwh:data-changed', renderBookingDeadlines);   // reflect ticks / new due-dated tasks on the Deadlines page
   renderHome();
   renderTop(today);
   renderSources();
@@ -203,39 +201,6 @@ function renderTimeSensitive() {
       <td>${esc(r.action)}</td>
     </tr>`;
   }).join('');
-}
-
-// ---- your own due-dated booking/prep reminders, surfaced on the Deadlines page ----
-// Same source the notifications bell uses: custom checklist items with a user-set due date
-// (jwh-due), unchecked. Synced via the store; ticking one off on the Checklist removes it here.
-function renderBookingDeadlines() {
-  const view = document.getElementById('view-deadlines');
-  if (!view) return;
-  let sec = document.getElementById('userDeadlines');
-  const due = get(KEYS.due, {}) || {};
-  const checks = get(KEYS.checklist, {}) || {};
-  const items = checklistItems(DATA)
-    .filter(it => due[it.id] && !checks[it.id])
-    .sort((a, b) => (due[a.id] < due[b.id] ? -1 : due[a.id] > due[b.id] ? 1 : 0));
-  if (!items.length) { if (sec) sec.remove(); return; }
-  if (!sec) {
-    sec = document.createElement('section');
-    sec.className = 'block callout';
-    sec.id = 'userDeadlines';
-    const anchor = document.getElementById('timeSensitiveSection');
-    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(sec, anchor); else view.appendChild(sec);
-  }
-  const rows = items.map(it => {
-    const d = due[it.id];
-    return `<tr>
-      <td>${esc(it.task)}</td>
-      <td><span class="due-tag ${esc(windowStatus(d, nowISO()))}">${esc(fmtShort(d))}</span></td>
-      <td>${esc(it.note || '')}</td>
-    </tr>`;
-  }).join('');
-  sec.innerHTML = `<h2><span class="emoji" aria-hidden="true">🎟</span> Your booking reminders</h2>
-    <p style="margin:.2rem 0 .7rem;color:var(--ink-soft)">Due-dated to-dos you added — tick them off on the <a href="#/checklist">Checklist</a>.</p>
-    <div class="table-wrap"><table><thead><tr><th>Task</th><th>Book by</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function renderHome() {

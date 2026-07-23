@@ -117,6 +117,13 @@ function buildItems() {
     if (start >= TODAY) items.push({ id: 'ev-' + e.id + '@' + start, title: e.title, when: start, kind: 'event', detail: e.area }); // future starts only — not already-running seasons
     if (e.bookBy && e.source === 'user') items.push({ id: 'bk-' + e.id + '@' + e.bookBy, title: 'Book: ' + e.title, when: e.bookBy, kind: 'book', detail: e.bookingNotes });   // baked book-by already covered by bookByTimeline — don't double-count
   });
+  // Timed-release / booking-window tracker cards with a book-by date → "Book:" alerts (same store
+  // the tracker renders from; recurring 'fixed' rules have no single date, so they don't notify).
+  (get(KEYS.drops, []) || []).forEach(c => {
+    if (c && c.kind === 'window' && /^\d{4}-\d{2}-\d{2}$/.test(c.dueBy || '')) {
+      items.push({ id: 'drop-' + c.id + '@' + c.dueBy, title: 'Book: ' + c.title, when: c.dueBy, kind: 'book', detail: c.detail });
+    }
+  });
   // Drop dead history: a deadline/book/task more than 30 days past isn't actionable — it's just
   // clutter that re-floods the bell. Future + ≤30-day-past items are kept (still worth surfacing).
   const floor = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
