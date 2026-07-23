@@ -72,7 +72,7 @@ function fromHomeLine(pt) {
 
 // ---- filter state (persisted) ----
 const SRC_CAT = { music: 'music', livemusic: 'music', geek: 'geek', building: 'build', restaurants: 'food', activities: 'seasonal', disney: 'disney', meetups: 'meet', photoSpots: 'photo' };
-const CAT_GLYPH = { photo: '📷', music: '🎵', geek: '🕹️', build: '🏙️', food: '🍜', meet: '👥', disney: '🏰', seasonal: '🎏', personal: '📍', stay: '🏠', event: '📅', mine: '⭐' };
+const CAT_GLYPH = { photo: '📷', music: '🎵', geek: '🕹️', build: '🏙️', food: '🍜', meet: '👥', disney: '🏰', park: '🎡', seasonal: '🎏', personal: '📍', stay: '🏠', event: '📅', mine: '⭐' };
 // emoji by calendar category (events) — shown beside event names in lists + popups
 const EVENT_EMOJI = { festival: '🎏', fireworks: '🎆', illumination: '✨', convention: '🎫', seasonal: '🍡', nature: '🌿', holiday: '🎌', food: '🍜', disney: '🏰', music: '🎵', personal: '📌', imported: '📅' };
 // emoji by source pillar — shown beside catalogue places in the area index
@@ -84,11 +84,18 @@ const eventEmoji = (cat) => EVENT_EMOJI[cat] || '📅';
 const EMOJI_CHIPS = ['🍜', '🎵', '🕹️', '🏯', '⛩️', '🎏', '🐱', '☕', '🍣', '🗼', '♨', '〒', '(・∀・)', '╰(°▽°)╯'];
 // a chip is a "kaomoji label" (renders beside the pin) when it's more than one visual glyph
 const isKaomoji = (g) => !!g && [...g].length > 2;
+// The map shows only YOUR pins now, grouped by the category you assign each one. These chips are
+// those categories; a pin with no (matching) category falls into "Yours". (The researched catalogue
+// + event pins were retired from the map — the catalogue still feeds the Plan-a-Day picker.)
 const FILTER_CATS = [
-  { key: 'event', label: 'Events' }, { key: 'music', label: 'Music' }, { key: 'food', label: 'Food' },
-  { key: 'geek', label: 'Geek' }, { key: 'build', label: 'Buildings' }, { key: 'meet', label: 'Meetups' },
-  { key: 'disney', label: 'Disney' }, { key: 'photo', label: 'Photo' }, { key: 'stay', label: 'Stays' }, { key: 'mine', label: 'Yours' },
+  { key: 'music', label: 'Music' }, { key: 'food', label: 'Food' },
+  { key: 'geek', label: 'Geek' }, { key: 'build', label: 'Buildings' },
+  { key: 'park', label: 'Parks' }, { key: 'photo', label: 'Photo' },
+  { key: 'mine', label: 'Yours' },
 ];
+const PIN_CATS = new Set(['music', 'food', 'geek', 'build', 'park', 'photo']);   // categories a user pin can be grouped into (else → 'mine')
+// pins the map draws: your saved places only (placesModel stays whole for the Plan picker)
+function mapPins() { return placesModel().filter(p => p.kind === 'user'); }
 function filters() { return { hidden: [], area: 'all', text: '', ...(get(KEYS.mapFilters, {}) || {}) }; }
 function setFilters(f) { set(KEYS.mapFilters, f); }
 // local text filter (Map v2 §3) — narrows ALREADY-loaded pins by name/area, no network.
@@ -99,11 +106,15 @@ function matchesText(pt, q) {
   return hay.includes(q);
 }
 function bucketOf(pt) {
-  if (pt.kind === 'user') return 'mine';
+  if (pt.kind === 'user') {
+    const c = pt.cat === 'disney' ? 'park' : pt.cat;   // legacy disney-categorised pins → Parks
+    return PIN_CATS.has(c) ? c : 'mine';               // the assigned category, else the "Yours" bucket
+  }
+  // catalogue/event pins are no longer drawn on the map, but keep a sane mapping for any stray caller
   if (pt.kind === 'event') return 'event';
-  if (pt.cat === 'personal') return 'stay';          // rooms
-  if (pt.cat === 'seasonal') return 'event';         // activities
-  return pt.cat;                                      // music/geek/build/food/meet/disney
+  if (pt.cat === 'personal') return 'stay';
+  if (pt.cat === 'seasonal') return 'event';
+  return pt.cat === 'disney' ? 'park' : pt.cat;
 }
 
 export function mountMap(data) {
@@ -414,7 +425,7 @@ function glyphFor(pt) {
   if (pt.kind === 'user' && pt.home) return '⛩️';
   if (pt.kind === 'user' && pt.emoji && !isKaomoji(pt.emoji)) return pt.emoji;
   const b = bucketOf(pt);
-  return ({ event: 'E', music: '♪', food: 'F', geek: 'G', build: 'B', meet: 'M', disney: 'D', stay: 'H', mine: '★', photo: '✦' })[b] || '•';
+  return ({ event: 'E', music: '♪', food: 'F', geek: 'G', build: 'B', meet: 'M', disney: 'D', park: 'P', stay: 'H', mine: '★', photo: '✦' })[b] || '•';
 }
 
 function renderPins() {
@@ -424,7 +435,7 @@ function renderPins() {
   const q = (f.text || '').trim().toLowerCase();
   const bounds = [];
   let shown = 0, total = 0;
-  placesModel().forEach(pt => {
+  mapPins().forEach(pt => {
     if (typeof pt.lat !== 'number' || typeof pt.lng !== 'number' || isNaN(pt.lat) || isNaN(pt.lng)) return;
     total++;
     if (f.hidden.includes(bucketOf(pt))) return;
@@ -644,6 +655,15 @@ function emojiChips(p) {
     <button type="button" class="pin-emoji pin-emoji-reset${p.emoji ? '' : ' on'}" data-uact="emoji" data-g="" aria-pressed="${p.emoji ? 'false' : 'true'}" aria-label="Reset to the category default glyph" title="Category default">↺</button>
   </div></details>`;
 }
+// category picker — groups this pin into one of the map's filter chips (or "Yours" = uncategorised)
+function catSelect(p) {
+  const cur = PIN_CATS.has(p.category) ? p.category : (p.category === 'disney' ? 'park' : '');
+  const opt = (k, l) => `<option value="${k}"${cur === k ? ' selected' : ''}>${l}</option>`;
+  return `<label class="pin-catsel"><span class="pin-catsel-i" aria-hidden="true">🏷</span> Group
+    <select data-uact="catsel" aria-label="Group this pin into a category">
+      ${opt('', 'Yours (uncategorised)')}${opt('music', 'Music')}${opt('food', 'Food')}${opt('geek', 'Geek')}${opt('build', 'Buildings')}${opt('park', 'Parks')}${opt('photo', 'Photo')}
+    </select></label>`;
+}
 function userPopup(p) {
   const safeLink = (p.link && /^https:\/\//i.test(p.link)) ? p.link : '';
   return `<div class="pin-pop">
@@ -654,6 +674,7 @@ function userPopup(p) {
     ${approxNote(p)}
     ${fromHomeLine(p)}
     ${dirHint()}
+    ${catSelect(p)}
     ${emojiChips(p)}
     <div class="pin-acts">
       <a href="${esc(directionsHref(p))}" target="_blank" rel="noopener noreferrer">🧭 Directions</a>
@@ -692,6 +713,10 @@ function wireUserPopup(p, popup) {
   pop.querySelector('.pin-emojis')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-uact="emoji"]'); if (!b) return;
     patchPlace(p.id, { emoji: b.dataset.g }); if (map) map.closePopup(); change();
+  });
+  // category picker — regroups the pin into a filter chip; '' → 'personal' (the "Yours" bucket)
+  pop.querySelector('[data-uact="catsel"]')?.addEventListener('change', (e) => {
+    patchPlace(p.id, { category: e.target.value || 'personal' }); if (map) map.closePopup(); change();
   });
 }
 
@@ -938,7 +963,7 @@ function localRow(pt) {
   </button></li>`;
 }
 function renderLocalSug(host, q) {
-  const hits = q.length >= 2 ? searchLocal(placesModel(), q) : [];
+  const hits = q.length >= 2 ? searchLocal(mapPins(), q) : [];   // the map shows your pins only → search those
   host.innerHTML = hits.map(localRow).join('');
 }
 function wireAddPlace() {

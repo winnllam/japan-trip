@@ -1565,6 +1565,8 @@ details[open] > .map-area::before{ transform: rotate(90deg); }
 /* pin colours for categories without a global .cat-* background */
 /* pins are unified Flighty-blue on the dark map; the in-dot letter glyph (data-g) carries category */
 .jwh-pin-dot.cat-geek, .jwh-pin-dot.cat-build, .jwh-pin-dot.cat-meet{ background: var(--flighty-blue); }
+.jwh-pin-dot.cat-park{ background: var(--c-park); }
+.jwh-pin-dot.cat-photo{ background: var(--c-trip); }
 
 /* fit-all-pins toolbar */
 .map-tools{ display:flex; align-items:center; gap:.7rem; margin:.3rem 0 .6rem; flex-wrap:wrap; }
@@ -1624,8 +1626,13 @@ button.mrd-stop:hover .mrd-go{ opacity:1; }
 .map-chip.cat-build .map-chip-dot{ background: var(--c-build); }
 .map-chip.cat-meet .map-chip-dot{ background: var(--c-meet-vivid); }
 .map-chip.cat-disney .map-chip-dot{ background: var(--c-disney); }
+.map-chip.cat-park .map-chip-dot{ background: var(--c-park); }
+.map-chip.cat-photo .map-chip-dot{ background: var(--c-trip); }
 .map-chip.cat-stay .map-chip-dot{ background: var(--c-personal); }
 .map-chip.cat-mine .map-chip-dot{ background: var(--gold, #d8a200); }
+/* pin category picker inside a saved-pin popup */
+.pin-catsel{ display:flex; align-items:center; gap:.35rem; font-family: var(--mono); font-size:.7rem; color: var(--ink-soft); margin:.3rem 0 .1rem; }
+.pin-catsel select{ font-family: var(--mono); font-size:.72rem; padding:.22rem .4rem; border:1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); color: var(--ink); }
 .map-arealbl{ font-family: var(--mono); font-size:.68rem; color: var(--ink-soft); display:inline-flex; align-items:center; gap:.4rem; }
 .map-arealbl select{ font-family: var(--mono); font-size:.72rem; padding:.3rem .5rem; border:1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); color: var(--ink); }
 /* local text filter — narrows already-loaded pins (distinct from #placeSearch add-place box) */
