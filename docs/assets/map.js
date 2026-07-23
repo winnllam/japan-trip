@@ -437,7 +437,7 @@ function renderPins() {
     const m = L.marker([pt.lat, pt.lng], { icon: divIcon(pt), riseOnHover: true, keyboard: pt.kind === 'user' });
     if (pt.kind === 'user') m.on('add', () => { const el = m.getElement(); if (el) { el.setAttribute('role', 'button'); el.setAttribute('aria-label', pt.name); } });
     m.bindPopup(popupFor(pt));
-    if (pt.kind === 'user') m.on('popupopen', () => { openPlaceId = pt.id; wireUserPopup(pt); }).on('popupclose', () => { if (openPlaceId === pt.id) openPlaceId = null; });
+    if (pt.kind === 'user') m.on('popupopen', (e) => { openPlaceId = pt.id; wireUserPopup(pt, e.popup); }).on('popupclose', () => { if (openPlaceId === pt.id) openPlaceId = null; });
     (top ? pinTop : pinLayer).addLayer(m);
     markersById.set(pt.id, m);
     bounds.push([pt.lat, pt.lng]);
@@ -669,9 +669,12 @@ function userPopup(p) {
       <button type="button" data-uact="del" aria-label="Delete place"${p.locked ? ' disabled title="unlock to delete"' : ''}>✕</button>
     </div></div>`;
 }
-function wireUserPopup(p) {
-  // scope to the whole popup card — the emoji chips live in .pin-emojis, the rest in .pin-acts
-  const pop = document.querySelector('.leaflet-popup .pin-pop');
+function wireUserPopup(p, popup) {
+  // Scope to THIS marker's popup element (from the popupopen event), not a global querySelector:
+  // during a re-render a closing/stale .leaflet-popup can linger in the DOM, and grabbing the first
+  // one wired the buttons onto the dead popup — so the live pin's "set exact" etc. did nothing.
+  const root = (popup && popup.getElement && popup.getElement()) || document.querySelector('.leaflet-popup');
+  const pop = root && root.querySelector('.pin-pop');
   if (!pop) return;
   const on = (sel, fn) => pop.querySelector(`.pin-acts [data-uact="${sel}"]`)?.addEventListener('click', fn);
   // setHomeBase is a self-dispatching writer (enforces the single-home invariant in one
