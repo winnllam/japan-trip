@@ -1825,6 +1825,8 @@ button.mrd-stop:hover .mrd-go{ opacity:1; }
 .stop-cal{ font-family: var(--mono); font-weight:700; font-size:.68rem; border:1px solid var(--line); background: var(--bg-soft); color: var(--ink-soft); border-radius: var(--r-sm); padding:.2rem .5rem; cursor:pointer; }
 .stop-cal:hover{ border-color: var(--indigo); color: var(--indigo); }
 .stop-cal.on{ border-color: var(--indigo); color: var(--indigo); background: color-mix(in srgb, var(--indigo) 12%, var(--bg-soft)); }
+.stop-pin{ font-family: var(--mono); font-weight:700; font-size:.68rem; border:1px solid var(--line); background: var(--bg-soft); color: var(--ink-soft); border-radius: var(--r-sm); padding:.2rem .5rem; cursor:pointer; }
+.stop-pin:hover{ border-color: var(--indigo); color: var(--indigo); }
 .stop-note{ width:100%; font-size:.78rem; border:none; border-bottom:1px solid transparent; background:none; color: var(--ink); padding:.1rem 0; text-overflow: ellipsis; }   /* stage 6: hard mid-word clip → ellipsis (full text on hover via title) */
 .stop-note:focus{ outline:none; border-bottom-color: var(--indigo); }
 .stop-rail{ display:flex; flex-direction:column; align-items:center; gap:.15rem; }   /* stage 6: ▲▼ and ✕ were two ragged columns */

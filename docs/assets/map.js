@@ -149,6 +149,8 @@ export function mountMap(data) {
     mapActive = e.detail?.route === 'map';
     if (mapActive) enterMap();
   });
+  // cross-route: a day-plan stop → "📍 Map" opens that pin here (plan.js sets the hash + ensureRoute, then fires this)
+  document.addEventListener('jwh:map-goto', (e) => { const id = e.detail?.id; if (id) focusPlace(id); });
   // off the map route, just mark pins dirty — defer the expensive 200+-marker rebuild until the map is next shown
   document.addEventListener('jwh:data-changed', () => {
     renderStats();   // cheap, pure-counter line — keep it fresh even off the map route
