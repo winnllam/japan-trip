@@ -117,8 +117,21 @@ function bucketOf(pt) {
   return pt.cat === 'disney' ? 'park' : pt.cat;
 }
 
+// Self-heal a stale saved filter so it can never strand the map at "0 pins showing": drop hidden
+// keys that are no longer chips (e.g. the retired event/meet/disney/stay), and clear a neighbourhood
+// filter that matches none of your current pins. Runs once on mount, before the first render.
+function sanitizeFilters() {
+  const f = filters();
+  const validCats = new Set(FILTER_CATS.map(c => c.key));
+  const hidden = (Array.isArray(f.hidden) ? f.hidden : []).filter(k => validCats.has(k));
+  const groups = new Set(mapPins().map(p => p.group));
+  const area = (f.area && f.area !== 'all' && !groups.has(f.area)) ? 'all' : (f.area || 'all');
+  if (hidden.length !== (Array.isArray(f.hidden) ? f.hidden.length : 0) || area !== f.area) setFilters({ ...f, hidden, area });
+}
+
 export function mountMap(data) {
   DATA = data;
+  sanitizeFilters();                              // prune stale filter state (never strand the map at 0 pins)
   renderIndex();                                  // offline-safe link index — ALWAYS
   renderSaved();                                  // your-pins sidebar (works without Leaflet too)
   renderFilters();
