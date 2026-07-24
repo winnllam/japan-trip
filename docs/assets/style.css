@@ -1562,11 +1562,14 @@ details[open] > .map-area::before{ transform: rotate(90deg); }
 .map-add-row #placeSearch{ flex:1; min-width:200px; }
 #placeDate{ font-family: var(--mono); font-size:.78rem; padding:.5rem .6rem; border:1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); color: var(--ink); }
 @media (prefers-reduced-motion: reduce){ .jwh-pin, .jwh-pin.pulse .jwh-pin-dot{ animation: none; } }
-/* pin colours for categories without a global .cat-* background */
-/* pins are unified Flighty-blue on the dark map; the in-dot letter glyph (data-g) carries category */
-.jwh-pin-dot.cat-geek, .jwh-pin-dot.cat-build, .jwh-pin-dot.cat-meet{ background: var(--flighty-blue); }
-.jwh-pin-dot.cat-park{ background: var(--c-park); }
-.jwh-pin-dot.cat-photo{ background: var(--c-trip); }
+/* pin-dot colour per category (2-class so it beats any global .cat-* fill) — the in-dot glyph carries the category too */
+.jwh-pin-dot.cat-cultural{ background: var(--c-holiday); }
+.jwh-pin-dot.cat-entertainment{ background: var(--c-music); }
+.jwh-pin-dot.cat-food{ background: var(--c-food); }
+.jwh-pin-dot.cat-nature{ background: var(--c-nature); }
+.jwh-pin-dot.cat-shopping{ background: var(--c-disney); }
+.jwh-pin-dot.cat-viewpoint{ background: var(--c-illumination); }
+.jwh-pin-dot.cat-uncategorized{ background: var(--gold); }
 
 /* fit-all-pins toolbar */
 .map-tools{ display:flex; align-items:center; gap:.7rem; margin:.3rem 0 .6rem; flex-wrap:wrap; }
@@ -1619,17 +1622,13 @@ button.mrd-stop:hover .mrd-go{ opacity:1; }
 .map-chip[aria-pressed="true"]{ color: var(--ink); border-color: var(--indigo); }
 .map-chip[aria-pressed="false"]{ text-decoration: line-through; }            /* AA: keep text readable; dim only the dot */
 .map-chip[aria-pressed="false"] .map-chip-dot{ opacity:.35; }
-.map-chip.cat-event .map-chip-dot{ background: var(--c-festival); }
-.map-chip.cat-music .map-chip-dot{ background: var(--c-music); }
+.map-chip.cat-cultural .map-chip-dot{ background: var(--c-holiday); }
+.map-chip.cat-entertainment .map-chip-dot{ background: var(--c-music); }
 .map-chip.cat-food .map-chip-dot{ background: var(--c-food); }
-.map-chip.cat-geek .map-chip-dot{ background: var(--c-geek-vivid); }
-.map-chip.cat-build .map-chip-dot{ background: var(--c-build); }
-.map-chip.cat-meet .map-chip-dot{ background: var(--c-meet-vivid); }
-.map-chip.cat-disney .map-chip-dot{ background: var(--c-disney); }
-.map-chip.cat-park .map-chip-dot{ background: var(--c-park); }
-.map-chip.cat-photo .map-chip-dot{ background: var(--c-trip); }
-.map-chip.cat-stay .map-chip-dot{ background: var(--c-personal); }
-.map-chip.cat-mine .map-chip-dot{ background: var(--gold, #d8a200); }
+.map-chip.cat-nature .map-chip-dot{ background: var(--c-nature); }
+.map-chip.cat-shopping .map-chip-dot{ background: var(--c-disney); }
+.map-chip.cat-viewpoint .map-chip-dot{ background: var(--c-illumination); }
+.map-chip.cat-uncategorized .map-chip-dot{ background: var(--gold, #d8a200); }
 /* pin category picker inside a saved-pin popup */
 .pin-catsel{ display:flex; align-items:center; gap:.35rem; font-family: var(--mono); font-size:.7rem; color: var(--ink-soft); margin:.3rem 0 .1rem; }
 .pin-catsel select{ font-family: var(--mono); font-size:.72rem; padding:.22rem .4rem; border:1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-soft); color: var(--ink); }
@@ -3598,8 +3597,6 @@ ruby > rt {
 /* review fixes: chip title truncates with a real ellipsis (text-overflow is inert on flex items) */
 .expw-chip .expw-t{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 
-/* Photo-spots map layer (S5) */
-.cat-photo{ background: var(--gold); }
 
 /* ============ APP SHELL (≥821px) — chrome stays put, MAIN scrolls internally ============
    (owner: "internal scrolling over overall site scrolling"). Body keeps only a sliver of

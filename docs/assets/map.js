@@ -72,7 +72,7 @@ function fromHomeLine(pt) {
 
 // ---- filter state (persisted) ----
 const SRC_CAT = { music: 'music', livemusic: 'music', geek: 'geek', building: 'build', restaurants: 'food', activities: 'seasonal', disney: 'disney', meetups: 'meet', photoSpots: 'photo' };
-const CAT_GLYPH = { photo: '📷', music: '🎵', geek: '🕹️', build: '🏙️', food: '🍜', meet: '👥', disney: '🏰', park: '🎡', seasonal: '🎏', personal: '📍', stay: '🏠', event: '📅', mine: '⭐' };
+const CAT_GLYPH = { cultural: '⛩️', entertainment: '🎭', food: '🍜', nature: '🌿', shopping: '🛍️', viewpoint: '🗼', uncategorized: '📍', personal: '📍', mine: '⭐' };
 // emoji by calendar category (events) — shown beside event names in lists + popups
 const EVENT_EMOJI = { festival: '🎏', fireworks: '🎆', illumination: '✨', convention: '🎫', seasonal: '🍡', nature: '🌿', holiday: '🎌', food: '🍜', disney: '🏰', music: '🎵', personal: '📌', imported: '📅' };
 // emoji by source pillar — shown beside catalogue places in the area index
@@ -87,13 +87,18 @@ const isKaomoji = (g) => !!g && [...g].length > 2;
 // The map shows only YOUR pins now, grouped by the category you assign each one. These chips are
 // those categories; a pin with no (matching) category falls into "Yours". (The researched catalogue
 // + event pins were retired from the map — the catalogue still feeds the Plan-a-Day picker.)
+// Chips = the categories you group your own pins into (alphabetical, with "Uncategorized" — the
+// fallback for a pin with no/unmatched category — pinned last). PIN_CATS is the assignable set.
 const FILTER_CATS = [
-  { key: 'music', label: 'Music' }, { key: 'food', label: 'Food' },
-  { key: 'geek', label: 'Geek' }, { key: 'build', label: 'Buildings' },
-  { key: 'park', label: 'Parks' }, { key: 'photo', label: 'Photo' },
-  { key: 'mine', label: 'Yours' },
+  { key: 'cultural', label: 'Cultural' },
+  { key: 'entertainment', label: 'Entertainment' },
+  { key: 'food', label: 'Food' },
+  { key: 'nature', label: 'Nature' },
+  { key: 'shopping', label: 'Shopping' },
+  { key: 'viewpoint', label: 'Viewpoint' },
+  { key: 'uncategorized', label: 'Uncategorized' },
 ];
-const PIN_CATS = new Set(['music', 'food', 'geek', 'build', 'park', 'photo']);   // categories a user pin can be grouped into (else → 'mine')
+const PIN_CATS = new Set(['cultural', 'entertainment', 'food', 'nature', 'shopping', 'viewpoint']);   // assignable; anything else → 'uncategorized'
 // pins the map draws: your saved places only (placesModel stays whole for the Plan picker)
 function mapPins() { return placesModel().filter(p => p.kind === 'user'); }
 function filters() { return { hidden: [], area: 'all', text: '', ...(get(KEYS.mapFilters, {}) || {}) }; }
@@ -106,15 +111,8 @@ function matchesText(pt, q) {
   return hay.includes(q);
 }
 function bucketOf(pt) {
-  if (pt.kind === 'user') {
-    const c = pt.cat === 'disney' ? 'park' : pt.cat;   // legacy disney-categorised pins → Parks
-    return PIN_CATS.has(c) ? c : 'mine';               // the assigned category, else the "Yours" bucket
-  }
-  // catalogue/event pins are no longer drawn on the map, but keep a sane mapping for any stray caller
-  if (pt.kind === 'event') return 'event';
-  if (pt.cat === 'personal') return 'stay';
-  if (pt.cat === 'seasonal') return 'event';
-  return pt.cat === 'disney' ? 'park' : pt.cat;
+  if (pt.kind === 'user') return PIN_CATS.has(pt.cat) ? pt.cat : 'uncategorized';   // assigned category, else the fallback
+  return 'uncategorized';   // catalogue/event pins are no longer drawn on the map
 }
 
 // Self-heal a stale saved filter so it can never strand the map at "0 pins showing": drop hidden
@@ -433,7 +431,7 @@ function glyphFor(pt) {
   if (pt.kind === 'user' && pt.home) return '⛩️';
   if (pt.kind === 'user' && pt.emoji && !isKaomoji(pt.emoji)) return pt.emoji;
   const b = bucketOf(pt);
-  return ({ event: 'E', music: '♪', food: 'F', geek: 'G', build: 'B', meet: 'M', disney: 'D', park: 'P', stay: 'H', mine: '★', photo: '✦' })[b] || '•';
+  return ({ cultural: 'C', entertainment: 'E', food: 'F', nature: 'N', shopping: 'S', viewpoint: 'V', uncategorized: '•' })[b] || '•';
 }
 
 function renderPins() {
@@ -665,11 +663,11 @@ function emojiChips(p) {
 }
 // category picker — groups this pin into one of the map's filter chips (or "Yours" = uncategorised)
 function catSelect(p) {
-  const cur = PIN_CATS.has(p.category) ? p.category : (p.category === 'disney' ? 'park' : '');
+  const cur = PIN_CATS.has(p.category) ? p.category : '';   // unknown/legacy category → Uncategorized
   const opt = (k, l) => `<option value="${k}"${cur === k ? ' selected' : ''}>${l}</option>`;
   return `<label class="pin-catsel"><span class="pin-catsel-i" aria-hidden="true">🏷</span> Group
     <select data-uact="catsel" aria-label="Group this pin into a category">
-      ${opt('', 'Yours (uncategorised)')}${opt('music', 'Music')}${opt('food', 'Food')}${opt('geek', 'Geek')}${opt('build', 'Buildings')}${opt('park', 'Parks')}${opt('photo', 'Photo')}
+      ${opt('cultural', 'Cultural')}${opt('entertainment', 'Entertainment')}${opt('food', 'Food')}${opt('nature', 'Nature')}${opt('shopping', 'Shopping')}${opt('viewpoint', 'Viewpoint')}${opt('', 'Uncategorized')}
     </select></label>`;
 }
 function userPopup(p) {
