@@ -149,8 +149,6 @@ export function mountMap(data) {
     mapActive = e.detail?.route === 'map';
     if (mapActive) enterMap();
   });
-  // cross-route: a day-plan stop → "📍 Map" opens that pin here (plan.js sets the hash + ensureRoute, then fires this)
-  document.addEventListener('jwh:map-goto', (e) => { const id = e.detail?.id; if (id) focusPlace(id); });
   // off the map route, just mark pins dirty — defer the expensive 200+-marker rebuild until the map is next shown
   document.addEventListener('jwh:data-changed', () => {
     renderStats();   // cheap, pure-counter line — keep it fresh even off the map route
@@ -486,6 +484,21 @@ function focusPlace(id) {
 }
 function announce(msg) { const el = $('#mapLive'); if (el) el.textContent = msg; }
 
+// The saved pin a day-plan stop corresponds to: explicit placeId first, else the pin whose name
+// appears in the stop name (len ≥ 5, longest wins) — so "Arrive Kasai Rinkai Park" resolves to the
+// "Kasai Rinkai Park" pin. Only pins with coords + a rendered marker qualify (we open its popup).
+function pinForStop(stop, pins) {
+  const ok = (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number';
+  if (stop.placeId) { const p = pins.find(x => x.id === stop.placeId); if (ok(p)) return p; }
+  const nm = (stop.name || '').toLowerCase();
+  let best = null, bestLen = 0;
+  for (const p of pins) {
+    const pn = (p.name || '').toLowerCase().trim();
+    if (ok(p) && pn.length >= 5 && nm.includes(pn) && pn.length > bestLen) { best = p; bestLen = pn.length; }
+  }
+  return best;
+}
+
 // ---- day-plan route line (numbered stops + polyline), called from plan.js ----
 export function drawRoute(stops, meta = {}) {
   ensureLeaflet();
@@ -499,11 +512,14 @@ export function drawRoute(stops, meta = {}) {
     if (!routeLayer) routeLayer = L.layerGroup().addTo(map);
     routeLayer.clearLayers();
     routeMarkers = [];
+    const pins = loadPlaces();
     pts.forEach(({ s, n }) => {
       const m = L.marker([s.lat, s.lng], { icon: L.divIcon({ className: 'jwh-route-pin' + (s.coordKind === 'approx' ? ' approx' : ''), html: `<b>${esc(String(n))}</b>`, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] }), zIndexOffset: 1000, keyboard: false });   // the detail-card legend is the accessible surface for route stops
-      m.bindPopup(`<div class="pin-pop"><b>${esc(String(n))}. ${esc(s.name)}</b></div>`);
+      const pin = pinForStop(s, pins);
+      if (pin) m.on('click', () => focusPlace(pin.id));   // this stop IS a saved pin → open the real pin popup
+      else m.bindPopup(`<div class="pin-pop"><b>${esc(String(n))}. ${esc(s.name)}</b></div>`);
       routeLayer.addLayer(m);
-      routeMarkers.push({ n, marker: m });
+      routeMarkers.push({ n, marker: m, pinId: pin ? pin.id : '' });
     });
     $('#mapCanvas')?.classList.add('route-focus');   // dim the catalogue/saved pins so the route stands out (Flighty focus)
     if (pts.length > 1) {
@@ -523,11 +539,13 @@ export function drawRoute(stops, meta = {}) {
 }
 export function clearRoute() { if (routeLayer) routeLayer.clearLayers(); routeMarkers = []; $('#mapCanvas')?.classList.remove('route-focus'); const h = $('#mapRouteDetail'); if (h) { h.hidden = true; h.innerHTML = ''; } announce('Route cleared.'); }
 
-// fly the map to a route stop + open its pin (from a detail-card row click)
+// fly the map to a route stop (from a detail-card row click). If the stop is a saved pin, open that
+// pin's real popup instead of the minimal route-stop popup.
 function focusStop(lat, lng, n) {
   if (!map) return;
-  map.setView([lat, lng], Math.max(map.getZoom(), 15), { animate: !prefersReducedMotion() });
   const hit = routeMarkers.find(x => String(x.n) === String(n));
+  if (hit && hit.pinId) { focusPlace(hit.pinId); return; }
+  map.setView([lat, lng], Math.max(map.getZoom(), 15), { animate: !prefersReducedMotion() });
   if (hit) hit.marker.openPopup();
 }
 

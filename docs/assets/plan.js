@@ -24,28 +24,6 @@ import {
 import { itineraryDay, itineraryStops } from './lib/itinerary.js';
 import { makeSortable } from './dnd.js';
 import { alertModal, confirmModal, askDate } from './lib/modal.js';
-import { ensureRoute } from './lazyroutes.js';
-
-// Find the saved map pin a stop corresponds to: an explicit placeId link first, else the pin whose
-// name appears in the stop name (len ≥ 5 to avoid noise) — so "Tap in at Tokyo DisneySea" resolves
-// to the "Tokyo DisneySea" pin. Only pins with real coords qualify (a link needs a marker to open).
-function pinForStop(stop, pins) {
-  const withCoord = (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number';
-  if (stop.placeId) { const p = pins.find(x => x.id === stop.placeId); if (withCoord(p)) return p; }
-  const nm = (stop.name || '').toLowerCase();
-  let best = null, bestLen = 0;
-  for (const p of pins) {
-    const pn = (p.name || '').toLowerCase().trim();
-    if (withCoord(p) && pn.length >= 5 && nm.includes(pn) && pn.length > bestLen) { best = p; bestLen = pn.length; }
-  }
-  return best;
-}
-// jump to the Map and open a pin's popup (map + plan share one lazy bundle, so it's already loaded)
-function openPinOnMap(id) {
-  if (!id) return;
-  if (location.hash !== '#/map') location.hash = '#/map';
-  ensureRoute('map').then(() => document.dispatchEvent(new CustomEvent('jwh:map-goto', { detail: { id } })));
-}
 
 let DATA = null, activeDate = '';
 
@@ -229,8 +207,7 @@ function render() {
     restoreBodyFocus(body, focus);
     return;
   }
-  const pins = loadPlaces();                                   // for the per-stop "📍 Map" link (stop → saved pin)
-  const rows = stops.map((s, i) => stopRow(s, i, stops, pins)).join('');
+  const rows = stops.map((s, i) => stopRow(s, i, stops)).join('');
   const mins = totalTransit(stops, DATA.areaGeo);
   const pace = stops.length >= 5 ? `<span class="plan-pace">⚠ ${stops.length} stops — that's a full day; consider trimming.</span>` : '';
   // whole-day directions: one Google waypoints link (drops coordless stops, caps at the
@@ -255,8 +232,7 @@ function render() {
   restoreBodyFocus(body, focus);
 }
 
-function stopRow(s, i, stops, pins) {
-  const pin = pinForStop(s, pins || []);   // saved map pin this stop maps to (if any) → "📍 Map" link
+function stopRow(s, i, stops) {
   const leg = i > 0 ? legLabel(stops[i - 1], s, DATA.areaGeo) : null;
   // per-leg Directions handoff — only when BOTH adjacent stops have real coords (a jittered
   // approx centroid isn't a route endpoint); keyless deep-link, opens the native Maps app.
@@ -282,7 +258,6 @@ function stopRow(s, i, stops, pins) {
           ${(get(KEYS.events, []) || []).some(e => e.id === `evstop-${activeDate}-${s.id}`)
             ? `<button type="button" class="stop-cal on" data-edit="stopcal" data-id="${esc(s.id)}" title="On the Month calendar — click to remove">✓ 📅 On calendar</button>`
             : `<button type="button" class="stop-cal" data-edit="stopcal" data-id="${esc(s.id)}" title="Add this stop to the calendar (shows in Month view)">＋ 📅 Calendar</button>`}
-          ${pin ? `<button type="button" class="stop-pin" data-edit="pin" data-pid="${esc(pin.id)}" title="Show ${esc(pin.name)} on the map" aria-label="Show ${esc(pin.name)} on the map">📍 Map</button>` : ''}
         </div>
         <input type="text" class="stop-note" value="${esc(s.note || '')}" title="${esc(s.note || '')}" data-edit="note" data-id="${esc(s.id)}" placeholder="note…" aria-label="Note for ${esc(s.name)}">
       </div>
@@ -327,7 +302,6 @@ function onBodyClick(e) {
   if (edit === 'up' || edit === 'down') return moveStop(id, edit);
   if (edit === 'dur-' || edit === 'dur+') return bumpDuration(id, edit === 'dur+' ? 15 : -15);
   if (edit === 'stopcal') return toggleStopCal(id);
-  if (edit === 'pin') return openPinOnMap(b.dataset.pid);   // jump to the Map + open this stop's saved pin
 }
 
 // Per-stop "add to calendar": create/remove a user calendar event for one stop (id
