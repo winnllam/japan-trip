@@ -90,7 +90,6 @@ export const KEYS = {
   seedPlan: 'jwh-seed-plan-v1',
   seedPlanTrip: 'jwh-seed-plan-trip-v1',   // one-time: bake the whole Jul 13–26 itinerary into Plan a Day
   seedTodos: 'jwh-seed-todos-v1',          // one-time: drop live trip action-items into the checklist's "My tasks"
-  seedDisney: 'jwh-seed-disney-v1',        // one-time: drop the Tokyo DisneySea (Fantasy Springs + Rapunzel) day plan on Oct 22
 };
 
 export function get(key, fallback) {
