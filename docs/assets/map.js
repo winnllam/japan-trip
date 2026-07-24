@@ -474,13 +474,15 @@ function fitAllPins() {
 // list/sidebar → map: fly to a pin (un-clustering it first if needed) and open its popup
 function focusPlace(id) {
   ensureLeaflet();
-  const go = () => {
+  // arriving fresh (e.g. a day-plan "📍 Map" jump) flushes this before renderPins() has populated
+  // markersById — so wait (poll ~2s) for the marker to exist instead of silently no-op'ing.
+  const go = (tries = 0) => {
     const m = markersById.get(id);
-    if (!m || !map) return;
-    const open = () => { map.setView(m.getLatLng(), 15, { animate: !prefersReducedMotion() }); m.openPopup(); announce('Centred map on ' + (placeById(id)?.name || 'pin')); };
+    if (!m || !map) { if (tries < 40) setTimeout(() => go(tries + 1), 50); return; }
+    const open = () => { map.invalidateSize(); map.setView(m.getLatLng(), 15, { animate: !prefersReducedMotion() }); m.openPopup(); announce('Centred map on ' + (placeById(id)?.name || 'pin')); };
     if (pinLayer.zoomToShowLayer && pinLayer.hasLayer(m)) pinLayer.zoomToShowLayer(m, open); else open();
   };
-  if (leafletReady) go(); else pendingOps.push(go);   // queue until lazy Leaflet finishes (a fixed timer raced slow CDNs and silently dropped the op)
+  if (leafletReady) go(); else pendingOps.push(() => go());   // queue until lazy Leaflet finishes (a fixed timer raced slow CDNs and silently dropped the op)
 }
 function announce(msg) { const el = $('#mapLive'); if (el) el.textContent = msg; }
 
