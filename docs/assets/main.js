@@ -57,6 +57,7 @@ function boot() {
       // still starts and every other page keeps working. Failures log to the console.
       const safe = (fn) => { try { fn(); } catch (err) { console.error('[boot]', err); } };
       safe(seedOnce);                      // one-time: drop a central Tokyo home-base pin (before any mount reads it)
+      safe(seedDisneySeaPlan);             // one-time: drop the Oct 22 Tokyo DisneySea (Fantasy Springs + Rapunzel) day plan
       // (Removed for the tourist revamp: the WHV/July seeders — near-base NE-Tokyo pins,
       //  share-house checklist fixups, the Jul 4 festival day-plan, the Jul 13–26 itinerary,
       //  and the WHV trip todos. Their defs remain below but are no longer invoked.)
@@ -151,6 +152,44 @@ function seedOnce() {
     set(KEYS.places, places);
   }
   set(KEYS.seed, true);
+}
+
+// One-time seed (jwh-seed-disney-v1): drop a Tokyo DisneySea day — Fantasy Springs (Rapunzel's
+// Lantern Festival + Frozen + Peter Pan) plus the classics + the night show — into Plan a Day on
+// Oct 22 (a placeholder the owner can drag/edit). Won't overwrite a plan already on that date.
+// Runs before the mounts so the calendar 📋 marker + planner pick it up on first render. Fantasy
+// Springs access rules + 2026 hours are estimates → flagged in the notes.
+function seedDisneySeaPlan() {
+  if (get(KEYS.seedDisney, false)) return;
+  const DATE = '2026-10-22';
+  const plans = get(KEYS.dayPlans, {}) || {};
+  if (!plans[DATE] || !(plans[DATE].stops || []).length) {
+    const DS = { lat: 35.6267, lng: 139.8850 };    // Tokyo DisneySea (Maihama)
+    const HOME = { lat: 35.6896, lng: 139.7006 };  // central-Tokyo base placeholder
+    const stop = (id, name, startTime, durationMin, note, pt, area) => ({
+      id, placeId: '', name, lat: pt.lat, lng: pt.lng, coordKind: 'approx',
+      area: area || 'Maihama (Tokyo DisneySea)', startTime, durationMin, note, locked: false,
+    });
+    plans[DATE] = {
+      date: DATE,
+      title: 'Tokyo DisneySea — Fantasy Springs + Rapunzel',
+      note: 'Built around Fantasy Springs (opened 2024): Rapunzel’s Lantern Festival + Frozen + Peter Pan. Fantasy Springs needs a Standby Pass (free, in the Tokyo Disney Resort app) or Disney Premier Access (paid) — grab one the second you tap in; they run out fast. Buy the date ticket in advance. Park hours + Fantasy Springs rules are 2026 estimates — verify closer.',
+      stops: [
+        stop('ds-depart', 'Depart your Tokyo base', '07:45', 0, 'Maihama is ~50–70 min out (JR to Tokyo Stn → Keiyō line). Leave early to be at the gate before opening.', HOME, 'Shinjuku'),
+        stop('ds-tapin', 'Tap in at Tokyo DisneySea', '09:00', 15, 'Date ticket ready in the app. IMMEDIATELY grab a Fantasy Springs Standby Pass (free) or Disney Premier Access for Rapunzel — they go fast.', DS),
+        stop('ds-rapunzel', '🏮 Rapunzel’s Lantern Festival', '09:45', 45, 'The Tangled boat ride through the floating-lantern festival — the one you came for. Ride it in your Fantasy Springs pass window.', DS),
+        stop('ds-frozen', '❄️ Anna & Elsa’s Frozen Journey', '10:45', 45, 'Frozen dark ride in the same land.', DS),
+        stop('ds-peterpan', 'Peter Pan’s Never Land Adventure', '11:45', 45, 'Flying over Never Land — the other Fantasy Springs headliner.', DS),
+        stop('ds-lunch', 'Lunch', '12:45', 75, 'Eat in Fantasy Springs, or head to Mediterranean Harbor. Reserve a sit-down slot in the app if you want one.', DS),
+        stop('ds-journey', 'Journey to the Center of the Earth', '14:15', 45, 'DisneySea signature ride — grab DPA if the standby line is long.', DS),
+        stop('ds-tower', 'Tower of Terror + Toy Story Mania', '15:15', 120, 'American Waterfront pair; lines get brutal late — consider DPA.', DS),
+        stop('ds-show', '🌊 Believe! Sea of Dreams (night show)', '19:30', 30, 'Harbor water + light + fireworks show — claim a Mediterranean Harbor spot ~45 min early. Verify the 2026 showtime.', DS),
+        stop('ds-return', 'Depart — beat the crush', '21:00', 0, 'Park closes ~21:00. Head to Maihama Stn early; last convenient trains to central Tokyo run till ~midnight.', HOME, 'Shinjuku'),
+      ],
+    };
+    set(KEYS.dayPlans, plans);
+  }
+  set(KEYS.seedDisney, true);
 }
 
 // One-time seed (guarded by jwh-seed-nearby-v1): drop the near-base neighborhood pins + the
