@@ -149,7 +149,7 @@ test('deleteFrom honours the lock and reports the removed record', () => {
   assert.equal(blocked.removed, null);
 });
 
-import { haversineKm, estimateMinutes, format, totalTransit, areaCount } from '../docs/assets/lib/transit.js';
+import { haversineKm, estimateMinutes, estimateMinutesFromCoord, format, totalTransit, areaCount } from '../docs/assets/lib/transit.js';
 import { newStop, upsertStopIn, removeStopIn, patchStopIn, reorderStopsIn, planToEvents } from '../docs/assets/lib/dayplan.js';
 
 const GEO = { Shinjuku: { lat: 35.69376, lng: 139.70363 }, Shibuya: { lat: 35.66337, lng: 139.6965 },
@@ -163,6 +163,20 @@ test('estimateMinutes: same area → 10, override pair honoured, scales with dis
   assert.equal(estimateMinutes('Shibuya', 'Shibuya', GEO), 10);
   assert.equal(estimateMinutes('Nakano', 'Shinjuku', GEO), 16);          // express-corridor override
   assert.ok(estimateMinutes('Shinjuku', 'Shibuya', GEO) > 10);
+});
+test('estimateMinutesFromCoord anchors to real origin coords (home base off the centroid table)', () => {
+  // Kikukawa/Sumida is NOT in the table, so a NAME lookup falls back to "Around Tokyo" (35.68,139.74).
+  const kikukawa = { lat: 35.6885, lng: 139.8078 };
+  // origin's real coords are ~6km east of the fallback → measurably farther from Shibuya than the
+  // fallback-based estimate would say. Anchoring to coords must reflect that.
+  const byCoord = estimateMinutesFromCoord(kikukawa, 'Shibuya', GEO);
+  const byName = estimateMinutes('Around Tokyo', 'Shibuya', GEO);   // what the old name-miss produced
+  assert.ok(byCoord > byName, `coord ${byCoord} should exceed name-fallback ${byName}`);
+  // dest may itself be a coord
+  assert.ok(estimateMinutesFromCoord(kikukawa, { lat: 35.66337, lng: 139.6965 }, GEO) > 10);
+  // no usable origin coords → null so the caller falls back
+  assert.equal(estimateMinutesFromCoord(null, 'Shibuya', GEO), null);
+  assert.equal(estimateMinutesFromCoord({ lat: 'x', lng: 1 }, 'Shibuya', GEO), null);
 });
 test('format floors at ≈10 and rounds to 5-min buckets', () => {
   assert.equal(format(7), '≈10 min');

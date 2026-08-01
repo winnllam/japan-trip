@@ -13,7 +13,7 @@ import { $, esc } from './lib/dom.js';
 import { KEYS, get, set, getRaw } from './lib/store.js';
 import { areaOf, AREA_ORDER, centroid, jitter } from './lib/geo.js';
 import { allEvents } from './calendar.js';   // override-merged view (renames, area edits, reschedules, hidden) — raw DATA.calendar showed stale titles (review #136)
-import { haversineKm, estimateMinutes, format as fmtMins, legLabel, totalTransit, areaCount } from './lib/transit.js';
+import { haversineKm, estimateMinutes, estimateMinutesFromCoord, format as fmtMins, legLabel, totalTransit, areaCount } from './lib/transit.js';
 import { directionsUrl } from './lib/directions.js';
 import { placesVisitedStats } from './lib/placestats.js';
 import {
@@ -66,7 +66,10 @@ function dirHint() {
 // Returns a popup HTML fragment (or '' when no home base / the home pin itself).
 function fromHomeLine(pt) {
   const h = homeBase(); if (!h || h.id === pt.id) return '';
-  const mins = estimateMinutes(h.area || h.address || '', pt.area || pt.address || '', DATA.areaGeo);
+  // anchor to the home pin's REAL coords; fall back to the name-centroid estimate if it has none
+  const dest = (typeof pt.lat === 'number' && typeof pt.lng === 'number') ? { lat: pt.lat, lng: pt.lng } : (pt.area || pt.address || '');
+  const mins = estimateMinutesFromCoord({ lat: h.lat, lng: h.lng }, dest, DATA.areaGeo)
+    ?? estimateMinutes(h.area || h.address || '', pt.area || pt.address || '', DATA.areaGeo);
   return `<div class="pin-fromhome">${esc(fmtMins(mins))} from home (est.)</div>`;
 }
 
@@ -916,7 +919,13 @@ function renderSaved() {
   const metaFor = (p) => {
     if (p.home) return 'home base';
     const area = areaOf(p.address || p.area || '');
-    const mins = (home && (p.area || p.address)) ? ` · ${fmtMins(estimateMinutes(home.area || home.address || '', p.area || p.address || '', DATA.areaGeo))} from home` : '';
+    let mins = '';
+    if (home && (p.area || p.address)) {
+      const dest = (typeof p.lat === 'number' && typeof p.lng === 'number') ? { lat: p.lat, lng: p.lng } : (p.area || p.address || '');
+      const m = estimateMinutesFromCoord({ lat: home.lat, lng: home.lng }, dest, DATA.areaGeo)
+        ?? estimateMinutes(home.area || home.address || '', p.area || p.address || '', DATA.areaGeo);
+      mins = ` · ${fmtMins(m)} from home`;
+    }
     return area + mins;
   };
   const row = (p, i) => {

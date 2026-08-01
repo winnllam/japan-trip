@@ -36,6 +36,19 @@ export function estimateMinutes(areaA, areaB, areaGeo) {
   return Math.round(OVERHEAD + SLOPE * km + TRANSFER * transfers(km));
 }
 
+// Minutes from an EXACT origin coordinate to a destination given as either a {lat,lng} or a
+// neighbourhood name. Lets the "≈ from home" estimate anchor to the home pin's TRUE coords instead
+// of a name→centroid lookup that misses when home sits in an area absent from the centroid table
+// (e.g. Kikukawa/Sumida). Same rail-derived formula as estimateMinutes. Returns null when the origin
+// has no usable coords, so callers can fall back to the name-based estimate.
+export function estimateMinutesFromCoord(origin, dest, areaGeo) {
+  const okPt = (p) => p && typeof p.lat === 'number' && typeof p.lng === 'number' && !isNaN(p.lat) && !isNaN(p.lng);
+  if (!okPt(origin)) return null;
+  const to = okPt(dest) ? dest : centroid(areaGeo, areaOf(dest));
+  const km = haversineKm(origin, to);
+  return Math.round(OVERHEAD + SLOPE * km + TRANSFER * transfers(km));
+}
+
 // honest display: floored at ≈10 min, rounded to 5-min buckets
 export function format(m) { return m <= 10 ? '≈10 min' : '≈' + (Math.round(m / 5) * 5) + ' min'; }
 
